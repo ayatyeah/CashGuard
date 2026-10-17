@@ -65,6 +65,15 @@ def load_labels() -> dict:
             for v in vids:
                 if v in out:
                     out[v]["cabinet"] = k
+    # augmented copies (data/aug/videos/<name>__<aug>.mov) inherit labels, types and cabinet of the original
+    if os.environ.get("FORTE_USE_AUG", "0") == "1":
+        aug_dir = os.path.join(CACHE)
+        for f in os.listdir(aug_dir) if os.path.isdir(aug_dir) else []:
+            if "__" in f and f.endswith(".pkl"):
+                name = f[:-4]
+                base = name.split("__")[0]
+                if base in out and name not in out:
+                    out[name] = {**out[base], "base": base, "aug": name.split("__")[1]}
     return out
 
 

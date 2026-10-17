@@ -132,17 +132,20 @@ def main():
     rows, labels = collect()
     videos = sorted(n for n, l in labels.items() if l["split"] == "train")
     by_video = "--cv-video" in sys.argv
-    GROUPS.update({v: (v if by_video else labels[v].get("cabinet", v)) for v in videos})
+    # augmented copies always share the group of their original (never train on a copy of a held-out video)
+    GROUPS.update({v: (labels[v].get("base", v) if by_video else labels[v].get("cabinet", labels[v].get("base", v)))
+                   for v in videos})
+    originals = [v for v in videos if "base" not in labels[v]]  # metrics on real videos only
     print("CV:", "leave-one-video-out" if by_video else "leave-one-CABINET-out",
-          f"({len(set(GROUPS.values()))} groups, {len(videos)} videos)")
+          f"({len(set(GROUPS.values()))} groups, {len(videos)} videos, {len(originals)} originals)")
     EXPERIMENTAL = {"next_visit_desk", "safe_open"}  # new, weakly supported features: kept only if CV does not get worse
     base = {k for k in S.STUMPS if not k.startswith("vlm_") and k not in EXPERIMENTAL}
-    best = lovo_score(lovo_predict(rows, videos, base), labels, videos)
+    best = lovo_score(lovo_predict(rows, videos, base), labels, originals)
     print("LOVO base (CV only): errors", -best[0], "FP", -best[1])
     # greedy forward selection of VLM features by LOVO (keep only if it does not hurt)
     enabled = set(base)
     for k in sorted(EXPERIMENTAL) + [k for k in S.STUMPS if k.startswith("vlm_")]:
-        sc = lovo_score(lovo_predict(rows, videos, enabled | {k}), labels, videos)
+        sc = lovo_score(lovo_predict(rows, videos, enabled | {k}), labels, originals)
         # keep if it does not hurt LOVO: single-example types cannot show a LOVO gain, but extra false
         # positives on the normal videos would show up here
         print(f"  + {k:34s} errors {-sc[0]:2d} FP {-sc[1]}", "KEEP" if sc >= best else "")
@@ -152,9 +155,9 @@ def main():
         enabled = {k for k in enabled if not k.startswith("vlm_")}
     print("enabled:", sorted(enabled))
     lovo = lovo_predict(rows, videos, enabled)
-    report(lovo, labels, videos, "CROSS-VALIDATED (each group scored by a model trained without it):")
+    report(lovo, labels, originals, "CROSS-VALIDATED (each group scored by a model trained without it):")
     model = train(rows, enabled)
-    report(predict(rows, model), labels, videos, "Final model on train (resubstitution):")
+    report(predict(rows, model), labels, originals, "Final model on train (resubstitution):")
     os.makedirs(os.path.join(ROOT, "models"), exist_ok=True)
     json.dump(model, open(os.path.join(ROOT, "models", "scorer.json"), "w"), indent=1)
     print("\nstumps:", json.dumps(model["stumps"], indent=None))

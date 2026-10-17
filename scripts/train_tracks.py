@@ -23,11 +23,11 @@ def collect():
     labels = load_labels()
     rows = []
     for name, l in sorted(labels.items()):
-        if l["split"] != "train" or name in vis.get("_exclude", []):
+        if l["split"] != "train" or l.get("base", name) in vis.get("_exclude", []):
             continue
         d = pickle.load(open(os.path.join(CACHE, f"{name}.pkl"), "rb"))
         sc = analyze_scene(d["obs"], d["meta"]["width"], d["meta"]["height"], track_model=None)
-        iv = vis.get(name, [])
+        iv = vis.get(l.get("base", name), [])
         for tr in sc.tracks:
             if tr.role == "cashier" or len(tr.t) < 3:
                 continue
