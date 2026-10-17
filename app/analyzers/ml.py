@@ -18,7 +18,7 @@ from app.ml import pipeline
 from app.ml.perception import Perception, iter_frames, video_meta
 from app.ml.semantic import ClipEmbedder, crop
 
-# seconds of CPU per sampled frame (perception + CLIP); measured on a Ryzen 7 5800H, Apple M3 is faster
+# seconds of CPU per sampled frame (perception + CLIP); measured on a Ryzen 5 5600H (6 cores, CPU only), Apple M3 is faster
 COST_PER_FRAME = float(os.environ.get("FORTE_COST_PER_FRAME", "0.6"))
 
 
