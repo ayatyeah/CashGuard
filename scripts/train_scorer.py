@@ -135,7 +135,7 @@ def main():
     GROUPS.update({v: (v if by_video else labels[v].get("cabinet", v)) for v in videos})
     print("CV:", "leave-one-video-out" if by_video else "leave-one-CABINET-out",
           f"({len(set(GROUPS.values()))} groups, {len(videos)} videos)")
-    EXPERIMENTAL = {"next_visit_desk"}  # new, weakly supported features: kept only if CV does not get worse
+    EXPERIMENTAL = {"next_visit_desk", "safe_open"}  # new, weakly supported features: kept only if CV does not get worse
     base = {k for k in S.STUMPS if not k.startswith("vlm_") and k not in EXPERIMENTAL}
     best = lovo_score(lovo_predict(rows, videos, base), labels, videos)
     print("LOVO base (CV only): errors", -best[0], "FP", -best[1])

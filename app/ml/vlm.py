@@ -116,3 +116,5 @@ Q_TELLER = (_T, _json_prompt("The image shows a bank teller at her desk (several
 Q_VISITOR = (_V, _json_prompt("The image shows moments of a client visit at a bank teller desk, in time order "
                               "from left to right.", _V))
 Q_DESK = (_D, _json_prompt("The image shows a bank teller desk after the teller walked away.", _D))
+_S = ["safe_door_open", "key_in_safe_lock", "cash_visible_in_safe"]
+Q_SAFE = (_S, _json_prompt("The image shows a metal safe (cash cabinet) in a bank office, several moments.", _S))

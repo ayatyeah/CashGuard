@@ -19,14 +19,14 @@ import numpy as np
 from .events import BAGS, DRINK, Scene, C, _anchor
 from .perception import COCO
 
-KINDS = ["leave", "entry", "crowd", "short_visit", "drink", "phone", "bag", "next_visit"]
+KINDS = ["leave", "entry", "crowd", "short_visit", "drink", "phone", "bag", "next_visit", "safe"]
 DEFAULT_TYPE = {
     "leave": "left_cash_unattended", "entry": "door_left_open", "crowd": "unauthorized_person",
     "short_visit": "count_not_in_client_presence", "drink": "food_drink", "phone": "phone_use", "bag": "personal_items",
-    "next_visit": "cash_left_on_desk",
+    "next_visit": "cash_left_on_desk", "safe": "safe_left_open",
 }
 FEATS = ["rem", "max_d", "end_gap", "end_score", "screen", "items", "desk_probe", "light_drop", "door_change",
-         "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob"]
+         "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob", "safe_change"]
 
 
 @dataclass
@@ -164,12 +164,17 @@ def crop_scaled(frame, box, scale):
     return c if c.size else frame
 
 
-def change_score(a: np.ndarray, b: np.ndarray, mask: np.ndarray) -> float:
-    """Fraction of masked pixels that changed between two gray frames (illumination-normalised)."""
+def change_score(a: np.ndarray, b: np.ndarray, mask: np.ndarray, normalize_contrast: bool = False) -> float:
+    """Fraction of masked pixels that changed between two gray frames (illumination-normalised;
+    with normalize_contrast also contrast-normalised — for scenes where the lights may be switched off)."""
     if mask.sum() < 50:
         return float("nan")
     a = cv2.GaussianBlur(a, (5, 5), 0).astype(np.float32); b = cv2.GaussianBlur(b, (5, 5), 0).astype(np.float32)
     a = a - a[mask].mean(); b = b - b[mask].mean()
+    if normalize_contrast:
+        sa, sb = a[mask].std() + 1e-3, b[mask].std() + 1e-3
+        s = (sa + sb) / 2
+        a, b = a / sa * s, b / sb * s
     d = np.abs(a - b)
     return float((d[mask] > 18).mean())
 
@@ -387,6 +392,40 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
                                       {"desk_change": float(np.median(vals)), "dur": float(a1 - a0),
                                        "desk_blob": float(np.median(blobs)) if blobs else 0.0}))
 
+    # ---------------- safe left open: the safe zone looks different at the end than at the start ----------
+    from .moments import safe_zone, _box_overlap
+    sz = safe_zone(scene)
+    if sz is not None:
+        reg = np.zeros(gray[0].shape, bool)
+        X1, Y1, X2, Y2 = (sz * scale).astype(int)
+        reg[max(0, Y1):Y2, max(0, X1):X2] = True
+        standing = []
+        for tr in cashier:
+            k_in = entry_index(tr, obs)
+            t_ok = tr.t[k_in] + 5.0 if k_in is not None else -1.0
+            standing += [int(i) for k, i in enumerate(tr.idx)
+                         if tr.info["d"][k] > 0.25 and tr.h[k] / scene.ref_h > 1.3 and tr.t[k] > t_ok]
+        standing = sorted(set(standing))
+        free = [i for i in range(len(obs)) if i not in set(standing)
+                and not _box_overlap(sz, _persons(obs[i], 0.3), thr=0.5)]
+        if standing and len(free) >= 2:
+            t_safe0 = float(times[min(standing)])
+            ref_i = [i for i in free if times[i] < t_safe0] or [0]
+            i0 = ref_i[-1]
+            late = [i for i in free if times[i] > float(times[max(standing)])]
+            if late:
+                vals = []
+                for j in late[-4:]:
+                    mk = reg & person_mask(gray[0].shape, obs[i0], scale) & person_mask(gray[0].shape, obs[j], scale)
+                    vals.append(change_score(gray[i0], gray[j], mk, normalize_contrast=True))
+                vals = [v for v in vals if v == v]
+                if vals:
+                    # event time: when the cashier walked away from the safe for the last time
+                    t_leave = float(times[max(standing)]) + 0.5
+                    ie = _idx(scene, t_leave)
+                    cands.append(Cand("safe", t_leave, ie, [ie, late[-1]],
+                                      {"safe_change": float(np.median(vals)), "dur": float(times[-1] - t_leave)}))
+
     # ---------------- crowd ----------------
     n = scene.n_inside
     run = 0
@@ -420,8 +459,9 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
         if tr.t[-1] > dur - 1.0 or tr.t[0] < 0.5:
             continue
         dwell = float(tr.t[-1] - tr.t[0])
-        if dwell < 20.0:
-            d = tr.info["d"]
+        d = tr.info["d"]
+        real = tr.feat["kpt"] > 0.5 and tr.feat["score"] > 0.6   # not a reflection / fragment
+        if 4.0 <= dwell < 20.0 and d.min() < 0.95 and real:
             k = int(np.argmin(d))
             i = int(tr.idx[k])
             te = max(float(tr.t[0]), float(tr.t[-1]) - 3.0)

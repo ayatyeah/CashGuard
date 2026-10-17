@@ -48,6 +48,14 @@
    "n_neg": 3,
    "enabled": false
   },
+  "safe_open": {
+   "thr": 0.08043527280969318,
+   "scale": 0.014014730246606173,
+   "separable": true,
+   "n_pos": 1,
+   "n_neg": 2,
+   "enabled": true
+  },
   "vlm_teller_drinks": {
    "thr": 0.9,
    "scale": 0.045000000000000005,
@@ -73,11 +81,11 @@
    "enabled": true
   },
   "vlm_client_gives_bag": {
-   "thr": 1.0,
-   "scale": 2.5e-07,
-   "separable": false,
+   "thr": 0.9,
+   "scale": 0.045000000000000005,
+   "separable": true,
    "n_pos": 1,
-   "n_neg": 1,
+   "n_neg": 0,
    "enabled": true
   },
   "vlm_cash_left_on_desk": {

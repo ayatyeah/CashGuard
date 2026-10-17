@@ -19,6 +19,7 @@ STUMPS = {
     "crowd_standing": ("crowd", "persist", "unauthorized_person", {}),
     "drink_clip": ("drink", "clip", "food_drink", {}),
     "next_visit_desk": ("next_visit", "desk_change", "cash_left_on_desk", {}),
+    "safe_open": ("safe", "safe_change", "safe_left_open", {"dur": 3.0}),
 }
 
 # VLM answers (app/ml/moments.py): "vlm_<key>" candidates, feature "count" = number of "yes" answers
