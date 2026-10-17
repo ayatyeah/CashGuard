@@ -12,9 +12,13 @@ import numpy as np
 STUMPS = {
     "leave_screen": ("leave", "screen", "workstation_unlocked", {"max_d": 0.9, "end_gap": 0.5}),
     "leave_items": ("leave", "unsecured", "left_cash_unattended", {"max_d": 0.9, "end_gap": 0.5}),
-    "entry_door": ("entry", "door_change", "door_left_open", {}),
-    "crowd_standing": ("crowd", "standing", "unauthorized_person", {}),
+    # door state is measured only when the person who entered walked away from the door to the workplace
+    # (a visitor sits right by the glass wall/door and contaminates the measurement)
+    "entry_door": ("entry", "door_change", "door_left_open", {"standing": 0.5}),
+    # "persist" = min/max apparent height during the visit: ≈1 when the visitor never sits down
+    "crowd_standing": ("crowd", "persist", "unauthorized_person", {}),
     "drink_clip": ("drink", "clip", "food_drink", {}),
+    "next_visit_desk": ("next_visit", "desk_change", "cash_left_on_desk", {}),
 }
 
 # VLM answers (app/ml/moments.py): "vlm_<key>" candidates, feature "count" = number of "yes" answers

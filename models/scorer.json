@@ -1,11 +1,11 @@
 {
  "stumps": {
   "leave_screen": {
-   "thr": 1.2688953280448914,
-   "scale": 0.06605204939842224,
+   "thr": 1.3013732433319092,
+   "scale": 0.04981309175491333,
    "separable": true,
    "n_pos": 2,
-   "n_neg": 6,
+   "n_neg": 9,
    "enabled": true
   },
   "leave_items": {
@@ -13,23 +13,23 @@
    "scale": 0.09632398221289747,
    "separable": true,
    "n_pos": 3,
-   "n_neg": 5,
+   "n_neg": 8,
    "enabled": true
   },
   "entry_door": {
-   "thr": 0.13364863073868546,
-   "scale": 0.010874610143995721,
+   "thr": 0.08545292552957047,
+   "scale": 0.03497246274855322,
    "separable": true,
    "n_pos": 3,
-   "n_neg": 7,
+   "n_neg": 1,
    "enabled": true
   },
   "crowd_standing": {
-   "thr": 0.657967032967033,
-   "scale": 0.13255494505494508,
+   "thr": 0.6958532929420471,
+   "scale": 0.05506247282028198,
    "separable": true,
    "n_pos": 4,
-   "n_neg": 6,
+   "n_neg": 8,
    "enabled": true
   },
   "drink_clip": {
@@ -37,8 +37,16 @@
    "scale": 0.19773830473423004,
    "separable": true,
    "n_pos": 2,
-   "n_neg": 10,
+   "n_neg": 14,
    "enabled": true
+  },
+  "next_visit_desk": {
+   "thr": 0.036943215260408876,
+   "scale": 0.0038657409899864673,
+   "separable": false,
+   "n_pos": 2,
+   "n_neg": 3,
+   "enabled": false
   },
   "vlm_teller_drinks": {
    "thr": 0.9,
@@ -46,14 +54,14 @@
    "separable": true,
    "n_pos": 1,
    "n_neg": 0,
-   "enabled": false
+   "enabled": true
   },
   "vlm_cup_or_food_on_desk": {
    "thr": 1.0,
    "scale": 2.5e-07,
    "separable": false,
    "n_pos": 1,
-   "n_neg": 1,
+   "n_neg": 2,
    "enabled": false
   },
   "vlm_handbag_or_coat_on_desk": {
@@ -62,22 +70,22 @@
    "separable": true,
    "n_pos": 1,
    "n_neg": 0,
-   "enabled": false
+   "enabled": true
   },
   "vlm_client_gives_bag": {
-   "thr": 0.9,
-   "scale": 0.045000000000000005,
-   "separable": true,
+   "thr": 1.0,
+   "scale": 2.5e-07,
+   "separable": false,
    "n_pos": 1,
-   "n_neg": 0,
-   "enabled": false
+   "n_neg": 1,
+   "enabled": true
   },
   "vlm_cash_left_on_desk": {
    "thr": 1.0,
    "scale": 2.5e-07,
    "separable": false,
    "n_pos": 3,
-   "n_neg": 3,
+   "n_neg": 5,
    "enabled": false
   },
   "vlm_documents_or_notebook_left": {
@@ -85,7 +93,7 @@
    "scale": 2.5e-07,
    "separable": false,
    "n_pos": 2,
-   "n_neg": 3,
+   "n_neg": 4,
    "enabled": false
   },
   "vlm_bag_left_on_desk": {
@@ -93,7 +101,7 @@
    "scale": 2.5e-07,
    "separable": false,
    "n_pos": 2,
-   "n_neg": 3,
+   "n_neg": 4,
    "enabled": false
   }
  }

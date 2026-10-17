@@ -55,8 +55,13 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
     moms = vlm_moments
     if moms is None and vlm is not None and get_frame is not None and uses_vlm(models) and \
             (vlm_budget is None or vlm_budget > 30):
+        import time as _time
+        t_v = _time.time()
         moms = M.propose(scene, frames, [c for c in cands if c.kind == "leave"])
         M.ask_all(vlm, moms, get_frame, budget_sec=vlm_budget)
+        # self-consistency ensemble: positives must survive 2 of 3 perturbed re-asks
+        left = None if vlm_budget is None else max(0.0, vlm_budget - (_time.time() - t_v))
+        M.confirm_positives(vlm, moms, get_frame, W, H, len(obs), budget_sec=left)
     if moms:
         cands += M.to_candidates(scene, moms)
     events: list[Event] = []
@@ -78,6 +83,11 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
 
 
 TEMPLATES = {
+    "cash_left_on_desk": "Около {t:.0f} с в помещение входит следующий посетитель, а стол кассира не вернулся к виду до "
+                         "предыдущей операции: на нём остались предметы (по виду — наличные предыдущего клиента), "
+                         "в сейф они не убраны.",
+    "safe_left_open": "Около {t:.0f} с сейф остаётся открытым, кассир отошла от него.",
+    "safe_key_left": "Около {t:.0f} с кассир уходит, ключ остаётся в замке сейфа.",
     "personal_items": "Около {t:.0f} с на кассовом столе видны личные вещи (сумка/верхняя одежда) рядом с "
                       "кассовым оборудованием (подтверждено визуальной языковой моделью).",
     "collection_bag_no_check": "Около {t:.0f} с посетитель передаёт кассиру сумку (по виду — инкассаторскую); "

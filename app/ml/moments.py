@@ -62,6 +62,47 @@ def propose(scene: Scene, frames: list, leave_cands: list) -> list[dict]:
     return out
 
 
+def _jitter_crop(box, W, H, scale):
+    x1, y1, x2, y2 = box
+    cx, cy, w, h = (x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1) * scale, (y2 - y1) * scale
+    return [max(0, cx - w / 2), max(0, cy - h / 2), min(W, cx + w / 2), min(H, cy + h / 2)]
+
+
+def confirm_positives(vlm, moments: list[dict], get_frame, W: int, H: int, n_obs: int,
+                      keys=("teller_drinks", "handbag_or_coat_on_desk", "client_gives_bag"),
+                      budget_sec: float | None = None) -> list[dict]:
+    """Self-consistency ensemble: re-ask positive answers on 2 perturbed views (tighter/looser crop, shifted
+    frames); keep a "yes" only if at least 2 of 3 answers agree. Only positives are re-asked → cheap."""
+    import sys
+    import time
+    t0 = time.time()
+    for m in moments:
+        a = m.get("answer") or {}
+        pos = [k for k in keys if a.get(k)]
+        if not pos:
+            continue
+        votes = {k: 1 for k in pos}
+        variants = [(0.8, 1), (1.25, -1)]
+        for sc, shift in variants:
+            if budget_sec is not None and time.time() - t0 > budget_sec:
+                break
+            idx = [min(n_obs - 1, max(0, i + shift)) for i in m["idx"]]
+            crop = _jitter_crop(m["crop"], W, H, sc)
+            try:
+                imgs = [crop_scaled(get_frame(i), crop, 1.0) for i in idx]
+                b = vlm.ask_flags(imgs, getattr(V, m["q"]))
+            except Exception as e:
+                print(f"VLM confirm failed: {e}", file=sys.stderr)
+                continue
+            for k in pos:
+                votes[k] += int(bool(b.get(k)))
+        m["votes"] = votes
+        for k in pos:
+            if votes[k] < 2:
+                a[k] = False
+    return moments
+
+
 def ask_all(vlm, moments: list[dict], get_frame, budget_sec: float | None = None) -> list[dict]:
     """get_frame(obs_index) -> full-resolution BGR frame (crops are in original pixel coordinates)."""
     import os

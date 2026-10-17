@@ -32,7 +32,8 @@ def collect():
         if lab["split"] != "train":
             continue
         _, sc, cands = candidates_for(name, bank)
-        vpath = os.path.join(ROOT, "data", "vlm", f"{name}.json")
+        vdir = "vlm_confirmed" if "--vlm-confirmed" in sys.argv else "vlm"
+        vpath = os.path.join(ROOT, "data", vdir, f"{name}.json")
         if os.path.exists(vpath):
             cands += M.to_candidates(sc, json.load(open(vpath)))
         types = [t for _, t in lab["types"]] + EXTRA_TYPES.get(name, [])
@@ -102,11 +103,16 @@ def report(pred, labels, videos, title):
     return (tp + tn) / n
 
 
+GROUPS: dict = {}  # video -> CV group (cabinet or the video itself)
+
+
 def lovo_predict(rows, videos, enabled):
+    """Cross-validated predictions: each group (cabinet by default) is scored by a model trained without it."""
     out = {}
-    for v in videos:
-        m = train([r for r in rows if r["video"] != v], enabled)
-        out.update({k: e for k, e in predict([r for r in rows if r["video"] == v], m).items()})
+    for g in sorted({GROUPS.get(v, v) for v in videos}):
+        held = {v for v in videos if GROUPS.get(v, v) == g}
+        m = train([r for r in rows if r["video"] not in held], enabled)
+        out.update({k: e for k, e in predict([r for r in rows if r["video"] in held], m).items()})
     return out
 
 
@@ -125,12 +131,17 @@ def main():
     with_vlm = "--with-vlm" in sys.argv
     rows, labels = collect()
     videos = sorted(n for n, l in labels.items() if l["split"] == "train")
-    base = {k for k in S.STUMPS if not k.startswith("vlm_")}
+    by_video = "--cv-video" in sys.argv
+    GROUPS.update({v: (v if by_video else labels[v].get("cabinet", v)) for v in videos})
+    print("CV:", "leave-one-video-out" if by_video else "leave-one-CABINET-out",
+          f"({len(set(GROUPS.values()))} groups, {len(videos)} videos)")
+    EXPERIMENTAL = {"next_visit_desk"}  # new, weakly supported features: kept only if CV does not get worse
+    base = {k for k in S.STUMPS if not k.startswith("vlm_") and k not in EXPERIMENTAL}
     best = lovo_score(lovo_predict(rows, videos, base), labels, videos)
     print("LOVO base (CV only): errors", -best[0], "FP", -best[1])
     # greedy forward selection of VLM features by LOVO (keep only if it does not hurt)
     enabled = set(base)
-    for k in [k for k in S.STUMPS if k.startswith("vlm_")]:
+    for k in sorted(EXPERIMENTAL) + [k for k in S.STUMPS if k.startswith("vlm_")]:
         sc = lovo_score(lovo_predict(rows, videos, enabled | {k}), labels, videos)
         # keep if it does not hurt LOVO: single-example types cannot show a LOVO gain, but extra false
         # positives on the normal videos would show up here
@@ -138,10 +149,10 @@ def main():
         if sc >= best:
             best, enabled = sc, enabled | {k}
     if not with_vlm:
-        enabled = set(base)
+        enabled = {k for k in enabled if not k.startswith("vlm_")}
     print("enabled:", sorted(enabled))
     lovo = lovo_predict(rows, videos, enabled)
-    report(lovo, labels, videos, "LOVO (each video scored by a model trained without it):")
+    report(lovo, labels, videos, "CROSS-VALIDATED (each group scored by a model trained without it):")
     model = train(rows, enabled)
     report(predict(rows, model), labels, videos, "Final model on train (resubstitution):")
     os.makedirs(os.path.join(ROOT, "models"), exist_ok=True)

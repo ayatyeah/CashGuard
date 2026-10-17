@@ -1,5 +1,5 @@
 {
- "note": "10 held-out videos are for evaluation only, never used for training or rule tuning",
+ "note": "Изначально 10 видео были отложены как test (оценены дважды: CV 0.50, CV+VLM 0.40). 17.10.2026 по решению команды test отпущен: обучение на всех 40 видео, устойчивость — leave-one-cabinet-out (configs/cabinets.json).",
  "test": [
   "X-1",
   "Х-13",
@@ -49,5 +49,6 @@
  "duplicates": {
   "Х-47": "Х-4",
   "Х-48": "Х-5"
- }
+ },
+ "test_released": true
 }

@@ -55,6 +55,16 @@ def load_labels() -> dict:
             continue
         if name in out:
             out[name]["types"] = [(e["t"], e["type_id"]) for e in a["events"]]
+    split = json.load(open(os.path.join(ROOT, "configs", "split.json")))
+    if split.get("test_released"):  # all 40 videos are development data now
+        for e in out.values():
+            e["orig_split"], e["split"] = e["split"], "train"
+    cab = json.load(open(os.path.join(ROOT, "configs", "cabinets.json")))
+    for k, vids in cab.items():
+        if not k.startswith("_"):
+            for v in vids:
+                if v in out:
+                    out[v]["cabinet"] = k
     return out
 
 

@@ -19,13 +19,14 @@ import numpy as np
 from .events import BAGS, DRINK, Scene, C, _anchor
 from .perception import COCO
 
-KINDS = ["leave", "entry", "crowd", "short_visit", "drink", "phone", "bag"]
+KINDS = ["leave", "entry", "crowd", "short_visit", "drink", "phone", "bag", "next_visit"]
 DEFAULT_TYPE = {
     "leave": "left_cash_unattended", "entry": "door_left_open", "crowd": "unauthorized_person",
     "short_visit": "count_not_in_client_presence", "drink": "food_drink", "phone": "phone_use", "bag": "personal_items",
+    "next_visit": "cash_left_on_desk",
 }
 FEATS = ["rem", "max_d", "end_gap", "end_score", "screen", "items", "desk_probe", "light_drop", "door_change",
-         "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured"]
+         "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob"]
 
 
 @dataclass
@@ -123,6 +124,25 @@ def static_regions(scene: Scene, seated_idx: list[int]):
     return desk, laptop
 
 
+def hand_zone(scene: Scene, seated_idx: list[int], pad: float = 0.35):
+    """Where the seated cashier's hands are (= the desk surface she works on), independent of the camera side."""
+    pts = []
+    sidx = set(seated_idx)
+    for tr in scene.tracks:
+        if tr.tid not in scene.cashier_ids:
+            continue
+        for k, i in enumerate(tr.idx):
+            if i in sidx:
+                w, s = tr.kpts[k, [9, 10]], tr.kps[k, [9, 10]]
+                pts += list(w[s > 0.3])
+    if len(pts) < 5:
+        return None
+    p = np.array(pts)
+    x1, y1 = np.percentile(p, 5, axis=0); x2, y2 = np.percentile(p, 95, axis=0)
+    r = pad * scene.ref_h
+    return np.array([max(0, x1 - r), max(0, y1 - r), min(scene.W, x2 + r), min(scene.H, y2 + r)], np.float32)
+
+
 def fixed_screen_level(frame: np.ndarray, o, laptop, scale: float) -> float:
     """Brightness of the (static) laptop screen area relative to the whole frame; NaN if occluded."""
     if laptop is None:
@@ -152,6 +172,26 @@ def change_score(a: np.ndarray, b: np.ndarray, mask: np.ndarray) -> float:
     a = a - a[mask].mean(); b = b - b[mask].mean()
     d = np.abs(a - b)
     return float((d[mask] > 18).mean())
+
+
+def new_blob(a: np.ndarray, b: np.ndarray, mask: np.ndarray, ref_px: float) -> float:
+    """Largest compact changed blob (e.g. a cash bundle put down) between two gray frames, as area / ref_px²."""
+    if mask.sum() < 50:
+        return float("nan")
+    a = cv2.GaussianBlur(a, (5, 5), 0).astype(np.float32); b = cv2.GaussianBlur(b, (5, 5), 0).astype(np.float32)
+    a = a - a[mask].mean(); b = b - b[mask].mean()
+    ch = ((np.abs(a - b) > 25) & mask).astype(np.uint8)
+    ch = cv2.morphologyEx(ch, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(ch, 8)
+    best = 0.0
+    for k in range(1, n):
+        x, y, w, h, area = st[k]
+        if area < 4 or w > 0.8 * ref_px or h > 0.8 * ref_px:
+            continue  # tiny noise or large structures (furniture, people)
+        if area / float(w * h) < 0.35:
+            continue  # not compact (edges, hair)
+        best = max(best, area / ref_px ** 2)
+    return best
 
 
 def person_mask(shape, o, scale, pad=0.15):
@@ -295,6 +335,57 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
         cands.append(Cand("entry", te, ie, [ie, _idx(scene, t_in + 7.0)],
                           {"door_change": float(np.median(vals)), "door_min": door_min, "dur": float(tr.t[-1] - tr.t[0]),
                            "standing": 1.0 if tr.role == "cashier" else 0.0}))
+
+    # ---------------- next visit: did the desk return to its state before the previous client's visit? ----
+    # (cash of the previous client left on the desk when the next one comes in — the bundle is ~15 px, so a
+    # masked appearance change of the desk region is used instead of an object detector). Consecutive clients
+    # often sit on the same chair and end up in one track, so visits are runs of "sitting at the desk".
+    if visitors:
+        seated_idx = [i for i in range(len(obs)) if scene.present[i]]
+        _, laptop_box = static_regions(scene, seated_idx)
+        desk = hand_zone(scene, seated_idx)
+        visits = []
+        for tr in visitors:
+            near = tr.info["d"] < 0.85
+            k = 0
+            while k < len(near):
+                if not near[k]:
+                    k += 1
+                    continue
+                e = k
+                while e + 1 < len(near) and (near[e + 1] or (e + 2 < len(near) and near[e + 2]
+                                                             and tr.t[e + 2] - tr.t[e] < 2.0)):
+                    e += 1
+                if tr.t[e] - tr.t[k] >= 3.0:
+                    visits.append((float(tr.t[k]), float(tr.t[e])))
+                k = e + 1
+        visits.sort()
+        if desk is not None and len(visits) >= 2:
+            reg = np.zeros(gray[0].shape, bool)
+            X1, Y1, X2, Y2 = (desk * scale).astype(int)
+            reg[max(0, Y1):Y2, max(0, X1):X2] = True
+            if laptop_box is not None:  # the screen changes legitimately (unlock, typing)
+                lw, lh = laptop_box[2] - laptop_box[0], laptop_box[3] - laptop_box[1]
+                L1, T1, L2, T2 = ((laptop_box + np.array([-0.15 * lw, -0.15 * lh, 0.15 * lw, 0.15 * lh])) * scale).astype(int)
+                reg[max(0, T1):T2, max(0, L1):L2] = False
+            for (a0, a1), (b0, b1) in zip(visits, visits[1:]):
+                if b0 - a1 < 3.0 or a1 - a0 < 8.0:
+                    continue
+                i_a = _idx(scene, a0 + 1.0)
+                gap = [j for j in range(len(obs)) if a1 + 1.0 <= times[j] <= b0 - 0.5]
+                vals, blobs = [], []
+                for j in gap[-4:]:
+                    mk = reg & person_mask(gray[0].shape, obs[i_a], scale) & person_mask(gray[0].shape, obs[j], scale)
+                    vals.append(change_score(gray[i_a], gray[j], mk))
+                    blobs.append(new_blob(gray[i_a], gray[j], mk, scene.ref_h * scale))
+                vals = [v for v in vals if v == v]
+                blobs = [v for v in blobs if v == v]
+                if vals:
+                    te = max(a1, b0 - 3.0)
+                    ie = _idx(scene, te)
+                    cands.append(Cand("next_visit", te, ie, [ie, gap[-1]],
+                                      {"desk_change": float(np.median(vals)), "dur": float(a1 - a0),
+                                       "desk_blob": float(np.median(blobs)) if blobs else 0.0}))
 
     # ---------------- crowd ----------------
     n = scene.n_inside

@@ -166,8 +166,9 @@ def visitor_prob(f: dict, model: dict | None) -> float:
         x = (np.array([f[k] for k in model["feats"]]) - np.array(model["mean"])) / np.array(model["std"])
         z = float(x @ np.array(model["coef"]) + model["intercept"])
         p = 1.0 / (1.0 + np.exp(-z))
-        # people seen through the glass wall or in reflections are detected with low confidence
-        return p if f["score"] > 0.6 else min(p, 0.3)
+        # people seen through the glass wall or in reflections are detected with low confidence and their
+        # skeleton is poorly visible (real visitors in the room: keypoint confidence >= 0.6 on all train videos)
+        return p if (f["score"] > 0.6 and f["kpt"] > 0.5) else min(p, 0.3)
     return 1.0 if (f["dmin"] < 1.4 and f["relh_med"] > 0.45 and f["dur"] >= 2.0 and f["still"] > 0.4) else 0.0
 
 

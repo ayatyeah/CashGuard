@@ -1,33 +1,352 @@
 {
- "_note": "Наша разметка типов по train-видео (организаторы дают только метку и таймкод). type_id — ключи app/rules/norms.yaml. layout — положение камеры: behind = камера за спиной кассира, front = напротив кассира, corner = угловая. Тестовые видео (configs/split.json → test) не размечались и не просматривались.",
- "X-2":  {"label": "violation", "events": [{"t": 10, "type_id": "no_client_id"}], "layout": "behind", "note": "клиент кладёт деньги, ID не предъявлен; кассир берёт деньги на 10 с"},
- "Х-3":  {"label": "no_violation", "events": [], "layout": "behind", "note": "эталон приёма: ID → деньги → пересчёт при клиенте"},
- "Х-4":  {"label": "violation", "events": [{"t": 57, "type_id": "cash_left_on_desk"}, {"t": 68, "type_id": "cash_not_counted"}], "layout": "behind", "note": "дубликат Х-47 (68 с); деньги 1-го клиента на столе при входе 2-го; деньги 2-го положены поверх без пересчёта"},
- "Х-5":  {"label": "no_violation", "events": [], "layout": "behind", "note": "эталон для Х-4; дубликат Х-48"},
- "Х-8":  {"label": "no_violation", "events": [], "layout": "front", "note": "пересчёт машинкой+вручную, деньги в сейф, запись в журнал"},
- "Х-10": {"label": "no_violation", "events": [], "layout": "front", "note": "телефон убран до работы с деньгами, пересчёт машинкой"},
- "Х-11": {"label": "violation", "events": [{"t": 18, "type_id": "workstation_unlocked"}], "layout": "front", "note": "кассир выключает свет и уходит, экран ноутбука остаётся включённым; сейф заперт"},
- "Х-12": {"label": "no_violation", "events": [], "layout": "front", "note": "эталон закрытия дня: ноутбук закрыт, сейф заперт, свет выключен"},
- "Х-15": {"label": "violation", "events": [{"t": 15, "type_id": "left_cash_unattended"}], "layout": "front", "note": "зелёная инкассаторская сумка оставлена на столе, кассир уходит"},
- "Х-17": {"label": "violation", "events": [{"t": 7, "type_id": "collection_bag_no_check"}], "layout": "behind", "note": "одиночный человек отдаёт зелёную сумку за ~2 с, проверки пломбы/документов нет"},
- "Х-18": {"label": "violation", "events": [{"t": 20, "type_id": "unauthorized_person"}], "layout": "behind", "note": "второй человек входит во время операции первого клиента и передаёт документ"},
- "Х-21": {"label": "no_violation", "events": [], "layout": "corner", "note": "деньги из сейфа, сейф сразу закрыт, пересчёт машинкой"},
- "Х-24": {"label": "violation", "events": [{"t": 8, "type_id": "left_cash_unattended"}], "layout": "corner", "note": "журнал и печати оставлены на столе, кассир уходит"},
- "Х-25": {"label": "no_violation", "events": [], "layout": "corner", "note": "эталон для Х-24: всё в сейф, сейф заперт"},
- "Х-26": {"label": "violation", "events": [{"t": 9, "type_id": "left_cash_unattended"}], "layout": "corner", "note": "наличные оставлены на столе, кассир уходит"},
- "Х-27": {"label": "no_violation", "events": [], "layout": "corner", "note": "эталон для Х-26: деньги в сейф"},
- "Х-28": {"label": "violation", "events": [{"t": 7, "type_id": "workstation_unlocked"}], "layout": "corner", "note": "уходит, экран ноутбука включён"},
- "Х-30": {"label": "violation", "events": [{"t": 13, "type_id": "unauthorized_person"}], "layout": "corner", "note": "дверь не закрыта (3.7 с), посторонний входит на 12.3–13 с и стоит у стола"},
- "Х-31": {"label": "no_violation", "events": [], "layout": "corner", "note": "эталон: дверь закрыта сразу после входа"},
- "Х-32": {"label": "violation", "events": [{"t": 5, "type_id": "door_left_open"}], "layout": "corner", "note": "дверь не закрыта после входа"},
- "Х-33": {"label": "violation", "events": [{"t": 6, "type_id": "door_left_open"}], "layout": "corner-wide", "note": "дверь не закрыта; посторонний заглядывает на 11–14 с"},
- "Х-34": {"label": "violation", "events": [{"t": 13, "type_id": "count_not_in_client_presence"}], "layout": "behind", "note": "клиент уходит, деньги загружаются в машинку после его ухода"},
- "Х-35": {"label": "no_violation", "events": [], "layout": "behind", "note": "полный цикл приёма: машинка + ручной пересчёт при клиенте, сейф"},
- "Х-37": {"label": "no_violation", "events": [], "layout": "behind", "note": "клиент закрывает дверь, деньги в машинку при клиенте"},
- "Х-39": {"label": "no_violation", "events": [], "layout": "behind", "note": "два клиента подряд, каждый сидит до конца пересчёта, деньги в сейф"},
- "Х-40": {"label": "violation", "events": [{"t": 17, "type_id": "personal_items"}], "layout": "front", "note": "куртка и сумка на кассовом столе"},
- "Х-43": {"label": "no_violation", "events": [], "layout": "front", "note": "машинка → детектор → сортировка"},
- "Х-44": {"label": "violation", "events": [{"t": 16, "type_id": "rejects_merged"}], "layout": "front", "note": "купюры из кармана отбраковки вложены в пачку без детектора"},
- "Х-45": {"label": "no_violation", "events": [], "layout": "front", "note": "машинка → детектор → раскладка по номиналам → бандероль"},
- "Х-46": {"label": "violation", "events": [{"t": 11, "type_id": "food_drink"}], "layout": "front", "note": "кофе и контейнер рядом с пачкой денег"}
+ "_note": "Наша разметка типов по train-видео (организаторы дают только метку и таймкод). type_id — ключи app/rules/norms.yaml. layout — положение камеры: behind = камера за спиной кассира, front = напротив кассира, corner = угловая. Видео бывшего test-сплита размечены после того, как test был отпущен (17.10.2026).",
+ "X-2": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 10,
+    "type_id": "no_client_id"
+   }
+  ],
+  "layout": "behind",
+  "note": "клиент кладёт деньги, ID не предъявлен; кассир берёт деньги на 10 с"
+ },
+ "Х-3": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "behind",
+  "note": "эталон приёма: ID → деньги → пересчёт при клиенте"
+ },
+ "Х-4": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 57,
+    "type_id": "cash_left_on_desk"
+   },
+   {
+    "t": 68,
+    "type_id": "cash_not_counted"
+   }
+  ],
+  "layout": "behind",
+  "note": "дубликат Х-47 (68 с); деньги 1-го клиента на столе при входе 2-го; деньги 2-го положены поверх без пересчёта"
+ },
+ "Х-5": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "behind",
+  "note": "эталон для Х-4; дубликат Х-48"
+ },
+ "Х-8": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "front",
+  "note": "пересчёт машинкой+вручную, деньги в сейф, запись в журнал"
+ },
+ "Х-10": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "front",
+  "note": "телефон убран до работы с деньгами, пересчёт машинкой"
+ },
+ "Х-11": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 18,
+    "type_id": "workstation_unlocked"
+   }
+  ],
+  "layout": "front",
+  "note": "кассир выключает свет и уходит, экран ноутбука остаётся включённым; сейф заперт"
+ },
+ "Х-12": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "front",
+  "note": "эталон закрытия дня: ноутбук закрыт, сейф заперт, свет выключен"
+ },
+ "Х-15": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 15,
+    "type_id": "left_cash_unattended"
+   }
+  ],
+  "layout": "front",
+  "note": "зелёная инкассаторская сумка оставлена на столе, кассир уходит"
+ },
+ "Х-17": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 7,
+    "type_id": "collection_bag_no_check"
+   }
+  ],
+  "layout": "behind",
+  "note": "одиночный человек отдаёт зелёную сумку за ~2 с, проверки пломбы/документов нет"
+ },
+ "Х-18": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 20,
+    "type_id": "unauthorized_person"
+   }
+  ],
+  "layout": "behind",
+  "note": "второй человек входит во время операции первого клиента и передаёт документ"
+ },
+ "Х-21": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "corner",
+  "note": "деньги из сейфа, сейф сразу закрыт, пересчёт машинкой"
+ },
+ "Х-24": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 8,
+    "type_id": "left_cash_unattended"
+   }
+  ],
+  "layout": "corner",
+  "note": "журнал и печати оставлены на столе, кассир уходит"
+ },
+ "Х-25": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "corner",
+  "note": "эталон для Х-24: всё в сейф, сейф заперт"
+ },
+ "Х-26": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 9,
+    "type_id": "left_cash_unattended"
+   }
+  ],
+  "layout": "corner",
+  "note": "наличные оставлены на столе, кассир уходит"
+ },
+ "Х-27": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "corner",
+  "note": "эталон для Х-26: деньги в сейф"
+ },
+ "Х-28": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 7,
+    "type_id": "workstation_unlocked"
+   }
+  ],
+  "layout": "corner",
+  "note": "уходит, экран ноутбука включён"
+ },
+ "Х-30": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 13,
+    "type_id": "unauthorized_person"
+   }
+  ],
+  "layout": "corner",
+  "note": "дверь не закрыта (3.7 с), посторонний входит на 12.3–13 с и стоит у стола"
+ },
+ "Х-31": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "corner",
+  "note": "эталон: дверь закрыта сразу после входа"
+ },
+ "Х-32": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 5,
+    "type_id": "door_left_open"
+   }
+  ],
+  "layout": "corner",
+  "note": "дверь не закрыта после входа"
+ },
+ "Х-33": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 6,
+    "type_id": "door_left_open"
+   }
+  ],
+  "layout": "corner-wide",
+  "note": "дверь не закрыта; посторонний заглядывает на 11–14 с"
+ },
+ "Х-34": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 13,
+    "type_id": "count_not_in_client_presence"
+   }
+  ],
+  "layout": "behind",
+  "note": "клиент уходит, деньги загружаются в машинку после его ухода"
+ },
+ "Х-35": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "behind",
+  "note": "полный цикл приёма: машинка + ручной пересчёт при клиенте, сейф"
+ },
+ "Х-37": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "behind",
+  "note": "клиент закрывает дверь, деньги в машинку при клиенте"
+ },
+ "Х-39": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "behind",
+  "note": "два клиента подряд, каждый сидит до конца пересчёта, деньги в сейф"
+ },
+ "Х-40": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 17,
+    "type_id": "personal_items"
+   }
+  ],
+  "layout": "front",
+  "note": "куртка и сумка на кассовом столе"
+ },
+ "Х-43": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "front",
+  "note": "машинка → детектор → сортировка"
+ },
+ "Х-44": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 16,
+    "type_id": "rejects_merged"
+   }
+  ],
+  "layout": "front",
+  "note": "купюры из кармана отбраковки вложены в пачку без детектора"
+ },
+ "Х-45": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "front",
+  "note": "машинка → детектор → раскладка по номиналам → бандероль"
+ },
+ "Х-46": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 11,
+    "type_id": "food_drink"
+   }
+  ],
+  "layout": "front",
+  "note": "кофе и контейнер рядом с пачкой денег"
+ },
+ "X-1": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 22,
+    "type_id": "unknown_review"
+   }
+  ],
+  "layout": "behind",
+  "note": "после двух пересчётов кассир отдаёт всю пачку обратно клиенту; ID остаётся на столе (тип неясен)"
+ },
+ "Х-13": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 47,
+    "type_id": "cash_not_counted"
+   }
+  ],
+  "layout": "front",
+  "note": "кассир одна вскрывает инкассаторскую сумку и убирает содержимое в сейф без пересчёта (норма — Х-14)"
+ },
+ "Х-14": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "front",
+  "note": "эталон: сумка вскрыта, всё пересчитано вручную и машинкой (~65 с), затем в сейф"
+ },
+ "Х-16": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "behind",
+  "note": "инкассатор закрывает дверь за ~3 с, показывает ID, сдаёт сумку, садится; пломба проверяется"
+ },
+ "Х-19": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "behind",
+  "note": "ID+деньги, пересчёт вручную/машинкой/вручную, сейф до ухода клиента; 2-й клиент начинает с ID"
+ },
+ "Х-20": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 5,
+    "type_id": "safe_left_open"
+   }
+  ],
+  "layout": "front",
+  "note": "сейф открыт на 1.7 с и остаётся открытым до конца, кассир садится считать"
+ },
+ "Х-22": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 14,
+    "type_id": "safe_key_left"
+   }
+  ],
+  "layout": "corner",
+  "note": "уходя, кассир оставляет ключ в замке сейфа (норма — Х-23, Х-29: ключ забран)"
+ },
+ "Х-23": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "corner",
+  "note": "экран заблокирован, сейф заперт, ключ забран, дверь закрыта"
+ },
+ "Х-29": {
+  "label": "no_violation",
+  "events": [],
+  "layout": "corner",
+  "note": "как Х-23"
+ },
+ "Х-38": {
+  "label": "violation",
+  "events": [
+   {
+    "t": 33,
+    "type_id": "cash_left_on_desk"
+   }
+  ],
+  "layout": "behind",
+  "note": "деньги 1-го клиента лежат на столе, когда входит 2-й; в конце пачки двух клиентов вместе"
+ }
 }

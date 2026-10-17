@@ -128,8 +128,10 @@ def test_score_requires_matching_kind_feature_and_stump():
 
 
 def test_score_entry_and_vlm_stumps():
-    assert types(S.score(cand("entry", door_change=0.3), MODEL)) == ["door_left_open"]
-    assert S.score(cand("entry", door_change=0.05), MODEL) == []
+    # door state counts only for an entrant who walked to the workplace (standing=1 → the cashier)
+    assert types(S.score(cand("entry", door_change=0.3, standing=1.0), MODEL)) == ["door_left_open"]
+    assert S.score(cand("entry", door_change=0.3, standing=0.0), MODEL) == []
+    assert S.score(cand("entry", door_change=0.05, standing=1.0), MODEL) == []
     assert types(S.score(cand("vlm_teller_holds_phone", count=2.0, frac=0.5), MODEL)) == ["phone_use"]
     # vlm kind with no fitted stump in the model → nothing
     assert S.score(cand("vlm_teller_drinks", count=5.0), MODEL) == []
@@ -141,8 +143,9 @@ def test_score_rules_crowd():
     assert out == [("unauthorized_person", 0.75)]
     assert S.score(cand("crowd", n_max=2.0, dur=10.0), {}) == []
     # visitor-track crowd candidates carry "standing": the rule is skipped, only the stump decides
-    assert S.score(cand("crowd", n_max=3.0, dur=5.0, standing=0.2), MODEL) == []
-    assert types(S.score(cand("crowd", n_max=3.0, dur=5.0, standing=0.9), MODEL)) == ["unauthorized_person"]
+    # the stump uses "persist" (min/max height ratio ≈ 1 when the visitor never sits down)
+    assert S.score(cand("crowd", n_max=3.0, dur=5.0, standing=0.9, persist=0.55), MODEL) == []
+    assert types(S.score(cand("crowd", n_max=3.0, dur=5.0, standing=0.9, persist=0.9), MODEL)) == ["unauthorized_person"]
 
 
 def test_score_rules_short_visit_and_phone():
