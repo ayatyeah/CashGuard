@@ -18,7 +18,7 @@
 - Резервный контур (с визуально-языковой моделью на Apple Silicon): `docs/mac_18gb.md`, `docs/deploy_mac.md`.
 
 ## 2. Запуск и использование
-- Облако (текущий стенд): `docs/deploy_railway.md` — один контейнер (`Dockerfile`): React-интерфейс, Go API, Python-анализатор.
+- Облако (текущий стенд): `docs/deploy_railway.md` — один контейнер (`Dockerfile`): React-интерфейс (CashGuard/Forte), Go API, Python-анализатор. Дедлайн задания считается сервером от момента загрузки (`JOB_DEADLINE_SEC`, 285 с), бюджет передаётся анализатору.
 - Локально: `docker compose up -d --build` (README, раздел CashGuard) или `src/backend/Dockerfile.ml`.
 - Анализатор отдельно: `bin/cashguard-analyzer <video.mov> [budget_sec]` → JSON в stdout (`scripts/cashguard_analyzer.py`).
 - Интерфейс: загрузить `.mov` → статус обработки → вердикт, события с таймкодами, кадры-доказательства, норматив.

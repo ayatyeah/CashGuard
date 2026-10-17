@@ -5,7 +5,7 @@ set -euo pipefail
 : "${BASE:?BASE url required}"; : "${KEY:?KEY required}"
 for v in "$@"; do
   t0=$(date +%s)
-  resp=$(curl -sS -X POST "$BASE/api/v1/analyze" -H "X-API-Key: $KEY" -F "file=@$v")
+  resp=$(curl -sS -m 120 -X POST "$BASE/api/v1/analyze" -H "X-API-Key: $KEY" -F "file=@$v")
   job=$(printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"]=="processing", d; print(d["job_id"])')
   echo "[$(basename "$v")] job=$job"
   r=""
@@ -19,6 +19,11 @@ except Exception: print("transient")')
     [ $(( $(date +%s) - t0 )) -gt 330 ] && { echo "  TIMEOUT > 330 s"; break; }
   done
   dt=$(( $(date +%s) - t0 ))
+  # final read with retries: a transient empty body must not abort the check
+  for k in 1 2 3; do
+    [ -n "$r" ] && printf '%s' "$r" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null && break
+    sleep 3; r=$(curl -sS -m 30 "$BASE/api/v1/jobs/$job" -H "X-API-Key: $KEY" || true)
+  done
   printf '%s' "$r" | python3 - "$dt" <<'PY'
 import json, sys, base64
 r = json.load(sys.stdin); dt = int(sys.argv[1])
