@@ -1,0 +1,11 @@
+# ML-часть анализатора (CPU, Linux / macOS arm64). Python 3.11.
+numpy
+opencv-python-headless
+onnxruntime
+rtmlib
+scipy
+scikit-learn
+pyyaml
+pillow
+torch
+transformers
