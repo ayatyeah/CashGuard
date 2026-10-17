@@ -10,29 +10,30 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"log"
+	"os"
 	"os/exec"
+	"strconv"
 	"time"
 )
 
 // CommandAnalyzer runs a local executable. Video never leaves this machine.
-// Arguments: executable <absolute-video-path>. stdout: completed result JSON.
+// Arguments: executable <absolute-video-path> <budget-seconds>. stdout: completed result JSON, stderr: logs.
+// The budget is what remains until the context deadline minus a reserve for frame encoding and saving.
 type CommandAnalyzer struct{ Command string }
 
 func (a CommandAnalyzer) Analyze(ctx context.Context, j domain.Job) (domain.Job, error) {
 	if a.Command == "" {
 		return j, fmt.Errorf("локальная модель не подключена: задайте ANALYZER_COMMAND")
 	}
-	cmd := exec.CommandContext(ctx, a.Command, j.Path)
+	budget := 270.0
+	if deadline, ok := ctx.Deadline(); ok {
+		budget = time.Until(deadline).Seconds() - 15
+	}
+	cmd := exec.CommandContext(ctx, a.Command, j.Path, strconv.FormatFloat(budget, 'f', 0, 64))
 	var output limitedBuffer
 	cmd.Stdout = &output
-	var diag tailBuffer // analyzer diagnostics (timings, warnings) — surfaced in the service log
-	cmd.Stderr = &diag
-	runErr := cmd.Run()
-	if d := diag.String(); d != "" {
-		log.Printf("analyzer %s stderr:\n%s", j.ID, d)
-	}
-	if runErr != nil {
+	cmd.Stderr = os.Stderr
+	if e := cmd.Run(); e != nil {
 		return j, fmt.Errorf("локальный анализатор завершился с ошибкой")
 	}
 	var result domain.Job
@@ -71,19 +72,6 @@ func (a CommandAnalyzer) Analyze(ctx context.Context, j domain.Job) (domain.Job,
 		j.Violations = []domain.Violation{}
 	}
 	return j, nil
-}
-
-// tailBuffer keeps only the last 64 KiB and never fails a write (stderr must not break the job).
-type tailBuffer struct{ bytes.Buffer }
-
-func (b *tailBuffer) Write(p []byte) (int, error) {
-	b.Buffer.Write(p)
-	if b.Len() > 64<<10 {
-		tail := append([]byte(nil), b.Bytes()[b.Len()-64<<10:]...)
-		b.Reset()
-		b.Buffer.Write(tail)
-	}
-	return len(p), nil
 }
 
 type limitedBuffer struct{ bytes.Buffer }

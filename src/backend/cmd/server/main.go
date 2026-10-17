@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -50,6 +51,9 @@ func main() {
 		a = infrastructure.DemoAnalyzer{}
 	}
 	s := usecase.New(repo, a, demo)
+	if v, e := strconv.Atoi(os.Getenv("JOB_DEADLINE_SEC")); e == nil && v > 0 {
+		s.Deadline = time.Duration(v) * time.Second
+	}
 	if e = s.Recover(); e != nil {
 		log.Fatal(e)
 	}

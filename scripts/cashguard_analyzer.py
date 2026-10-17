@@ -1,6 +1,7 @@
 """Launcher for the Go backend (ANALYZER_COMMAND contract, see README «Подключение локальной модели»).
 
-    cashguard_analyzer.py <absolute-video-path>
+    cashguard_analyzer.py <absolute-video-path> [budget-seconds]
+The Go backend passes the budget left until the job deadline (counted from upload); without it ANALYZER_BUDGET_SEC is used.
 stdout: the completed result JSON only; all logs go to stderr; exit code 0 on success.
 """
 from __future__ import annotations
@@ -21,8 +22,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: cashguard_analyzer.py <video>", file=sys.stderr)
+    if len(sys.argv) not in (2, 3):
+        print("usage: cashguard_analyzer.py <video> [budget-seconds]", file=sys.stderr)
         return 2
     path = sys.argv[1]
     from app.analyzers.ml import MLAnalyzer
@@ -32,20 +33,11 @@ def main() -> int:
 
     an = MLAnalyzer()
     meta = video_meta(path)
-    # The jury counts 5 minutes from the upload. The backend only passes the file path, but the upload's
-    # mtime is the moment it landed on disk — so the time spent waiting in the queue is subtracted here.
-    jury_limit = float(os.environ.get("ANALYZER_JURY_LIMIT_SEC", "255"))  # 300 s jury limit minus upload/evidence margin
-    try:
-        waited = max(0.0, T0 - os.path.getmtime(path))
-    except OSError:
-        waited = 0.0
-    if waited > jury_limit:  # not a fresh upload (CLI run on an old file) → full budget
-        waited = 0.0
-    budget = min(float(os.environ.get("ANALYZER_BUDGET_SEC", "240")), jury_limit - waited) - (time.time() - T0)
-    budget = max(budget, 25.0)  # always return something rather than nothing
-    print(f"queue wait {waited:.0f}s, budget {budget:.0f}s", file=sys.stderr)
+    budget = float(sys.argv[2] if len(sys.argv) == 3 else os.environ.get("ANALYZER_BUDGET_SEC", "240"))
+    budget = max(25.0, budget - (time.time() - T0))  # model loading above counts against the same deadline
+    print(f"budget {budget:.0f}s after {time.time() - T0:.0f}s of startup", file=sys.stderr)
     res = an.analyze(path, meta, budget)
-    fps = meta["fps"]
+    fps = meta["fps"] or 30.0
     violations = []
     for d in res.detections:
         frames = [{"timestamp_sec": round(f / fps, 1), "image_base64": frame_b64(path, f)}
@@ -61,8 +53,7 @@ def main() -> int:
         violations.append(v)
     out = {"status": "done", "verdict": "violation" if violations else "no_violation", "violations": violations}
     print(f"timings={res.timings} warnings={res.warnings}", file=sys.stderr)
-    with os.fdopen(_REAL_STDOUT, "wb") as f:  # buffered writer: no partial writes
-        f.write(json.dumps(out, ensure_ascii=False, allow_nan=False).encode())
+    os.write(_REAL_STDOUT, json.dumps(out, ensure_ascii=False, allow_nan=False).encode())
     return 0
 
 
