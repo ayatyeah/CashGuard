@@ -1,0 +1,106 @@
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 33992.40it/s]
+CV: leave-one-CABINET-out (7 groups, 40 videos, 40 originals)
+LOVO base (CV only): loss(2FN+FP) 22 FP 0
+  + next_visit_desk                    loss 21 FP 1 
+  + next_visit_owl                     loss 18 FP 0 KEEP
+  + safe_open                          loss 18 FP 0 KEEP
+  + vlm_teller_holds_phone             loss 18 FP 0 KEEP
+  + vlm_teller_drinks                  loss 18 FP 0 KEEP
+  + vlm_cup_or_food_on_desk            loss 20 FP 2 
+  + vlm_handbag_or_coat_on_desk        loss 18 FP 0 KEEP
+  + vlm_client_gives_bag               loss 18 FP 0 KEEP
+  + vlm_cash_stacks_mixed_on_desk      loss 18 FP 0 KEEP
+  + vlm_cash_left_on_desk              loss 19 FP 5 
+  + vlm_documents_or_notebook_left     loss 20 FP 4 
+  + vlm_bag_left_on_desk               loss 20 FP 4 
+enabled: ['crowd_standing', 'drink_clip', 'entry_door', 'leave_items', 'leave_screen', 'next_visit_owl', 'safe_open', 'vlm_cash_stacks_mixed_on_desk', 'vlm_client_gives_bag', 'vlm_handbag_or_coat_on_desk', 'vlm_teller_drinks', 'vlm_teller_holds_phone']
+
+CROSS-VALIDATED (each group scored by a model trained without it):
+  X-1   y=1 pred=0 ERR [] ts=[22.0]
+  X-2   y=1 pred=0 ERR [] ts=[10.0]
+  Х-10  y=0 pred=0 OK  [] ts=[]
+  Х-11  y=1 pred=1 OK  [('workstation_unlocked', 14.1, 0.84)] ts=[18.0]
+  Х-12  y=0 pred=0 OK  [] ts=[]
+  Х-13  y=1 pred=0 ERR [] ts=[47.0]
+  Х-14  y=0 pred=0 OK  [] ts=[]
+  Х-15  y=1 pred=1 OK  [('left_cash_unattended', 15.0, 0.94)] ts=[15.0]
+  Х-16  y=0 pred=0 OK  [] ts=[]
+  Х-17  y=1 pred=1 OK  [('unauthorized_person', 5.0, 0.74)] ts=[7.0]
+  Х-18  y=1 pred=1 OK  [('unauthorized_person', 15.5, 0.75), ('unauthorized_person', 17.0, 0.66)] ts=[20.0]
+  Х-19  y=0 pred=0 OK  [] ts=[]
+  Х-20  y=1 pred=0 ERR [] ts=[5.0]
+  Х-21  y=0 pred=0 OK  [] ts=[]
+  Х-22  y=1 pred=0 ERR [] ts=[14.0]
+  Х-23  y=0 pred=0 OK  [] ts=[]
+  Х-24  y=1 pred=1 OK  [('left_cash_unattended', 5.5, 0.78)] ts=[8.0]
+  Х-25  y=0 pred=0 OK  [] ts=[]
+  Х-26  y=1 pred=1 OK  [('left_cash_unattended', 10.0, 0.88)] ts=[9.0]
+  Х-27  y=0 pred=0 OK  [] ts=[]
+  Х-28  y=1 pred=1 OK  [('workstation_unlocked', 9.6, 0.91)] ts=[7.0]
+  Х-29  y=0 pred=0 OK  [] ts=[]
+  Х-3   y=0 pred=0 OK  [] ts=[]
+  Х-30  y=1 pred=1 OK  [('unauthorized_person', 13.5, 0.99)] ts=[13.0]
+  Х-31  y=0 pred=0 OK  [] ts=[]
+  Х-32  y=1 pred=0 ERR [] ts=[5.0]
+  Х-33  y=1 pred=1 OK  [('unauthorized_person', 12.0, 0.99)] ts=[6.0]
+  Х-34  y=1 pred=1 OK  [('count_not_in_client_presence', 13.6, 0.7)] ts=[13.0]
+  Х-35  y=0 pred=0 OK  [] ts=[]
+  Х-37  y=0 pred=0 OK  [] ts=[]
+  Х-38  y=1 pred=1 OK  [('cash_left_on_desk', 32.5, 0.96)] ts=[33.0]
+  Х-39  y=0 pred=0 OK  [] ts=[]
+  Х-4   y=1 pred=1 OK  [('cash_left_on_desk', 57.1, 0.75)] ts=[57.0, 68.0]
+  Х-40  y=1 pred=0 ERR [] ts=[17.0]
+  Х-43  y=0 pred=0 OK  [] ts=[]
+  Х-44  y=1 pred=0 ERR [] ts=[16.0]
+  Х-45  y=0 pred=0 OK  [] ts=[]
+  Х-46  y=1 pred=0 ERR [] ts=[11.0]
+  Х-5   y=0 pred=0 OK  [] ts=[]
+  Х-8   y=0 pred=0 OK  [] ts=[]
+verdict acc=0.775 TP=12 FP=0 TN=19 FN=9 recall=0.57 precision=1.00
+timecode |err|: median=1.5s mean=1.9s  <=2s 0.58  <=5s 0.92;  type correct on detected: 0.83
+
+Final model on train (resubstitution):
+  X-1   y=1 pred=0 ERR [] ts=[22.0]
+  X-2   y=1 pred=0 ERR [] ts=[10.0]
+  Х-10  y=0 pred=0 OK  [] ts=[]
+  Х-11  y=1 pred=1 OK  [('workstation_unlocked', 14.1, 0.88)] ts=[18.0]
+  Х-12  y=0 pred=0 OK  [] ts=[]
+  Х-13  y=1 pred=0 ERR [] ts=[47.0]
+  Х-14  y=0 pred=0 OK  [] ts=[]
+  Х-15  y=1 pred=1 OK  [('left_cash_unattended', 15.0, 0.95)] ts=[15.0]
+  Х-16  y=0 pred=0 OK  [] ts=[]
+  Х-17  y=1 pred=1 OK  [('unauthorized_person', 5.0, 0.94), ('collection_bag_no_check', 3.5, 0.9)] ts=[7.0]
+  Х-18  y=1 pred=1 OK  [('unauthorized_person', 15.5, 0.75), ('unauthorized_person', 17.0, 0.88)] ts=[20.0]
+  Х-19  y=0 pred=0 OK  [] ts=[]
+  Х-20  y=1 pred=1 OK  [('safe_left_open', 5.5, 0.88)] ts=[5.0]
+  Х-21  y=0 pred=0 OK  [] ts=[]
+  Х-22  y=1 pred=0 ERR [] ts=[14.0]
+  Х-23  y=0 pred=0 OK  [] ts=[]
+  Х-24  y=1 pred=1 OK  [('left_cash_unattended', 5.5, 0.88)] ts=[8.0]
+  Х-25  y=0 pred=0 OK  [] ts=[]
+  Х-26  y=1 pred=1 OK  [('left_cash_unattended', 10.0, 0.95)] ts=[9.0]
+  Х-27  y=0 pred=0 OK  [] ts=[]
+  Х-28  y=1 pred=1 OK  [('workstation_unlocked', 9.6, 0.92)] ts=[7.0]
+  Х-29  y=0 pred=0 OK  [] ts=[]
+  Х-3   y=0 pred=0 OK  [] ts=[]
+  Х-30  y=1 pred=1 OK  [('door_left_open', 4.0, 0.97), ('unauthorized_person', 13.5, 0.99)] ts=[13.0]
+  Х-31  y=0 pred=0 OK  [] ts=[]
+  Х-32  y=1 pred=1 OK  [('door_left_open', 4.5, 0.88)] ts=[5.0]
+  Х-33  y=1 pred=1 OK  [('door_left_open', 4.5, 0.97), ('unauthorized_person', 12.0, 0.99)] ts=[6.0]
+  Х-34  y=1 pred=1 OK  [('count_not_in_client_presence', 13.6, 0.7)] ts=[13.0]
+  Х-35  y=0 pred=0 OK  [] ts=[]
+  Х-37  y=0 pred=0 OK  [] ts=[]
+  Х-38  y=1 pred=1 OK  [('cash_left_on_desk', 32.5, 0.96)] ts=[33.0]
+  Х-39  y=0 pred=0 OK  [] ts=[]
+  Х-4   y=1 pred=1 OK  [('cash_left_on_desk', 57.1, 0.88)] ts=[57.0, 68.0]
+  Х-40  y=1 pred=1 OK  [('personal_items', 5.0, 0.9)] ts=[17.0]
+  Х-43  y=0 pred=0 OK  [] ts=[]
+  Х-44  y=1 pred=0 ERR [] ts=[16.0]
+  Х-45  y=0 pred=0 OK  [] ts=[]
+  Х-46  y=1 pred=1 OK  [('food_drink', 12.0, 0.88), ('food_drink', 10.0, 0.9), ('food_drink', 13.0, 0.9)] ts=[11.0]
+  Х-5   y=0 pred=0 OK  [] ts=[]
+  Х-8   y=0 pred=0 OK  [] ts=[]
+verdict acc=0.875 TP=16 FP=0 TN=19 FN=5 recall=0.76 precision=1.00
+timecode |err|: median=1.0s mean=2.0s  <=2s 0.69  <=5s 0.94;  type correct on detected: 1.00
+
+stumps: {"leave_screen": {"thr": 1.3013732433319092, "scale": 0.04981309175491333, "separable": true, "n_pos": 2, "n_neg": 9, "enabled": true}, "leave_items": {"thr": 0.551153688466767, "scale": 0.09632398221289747, "separable": true, "n_pos": 3, "n_neg": 8, "enabled": true}, "entry_door": {"thr": 0.08545292552957047, "scale": 0.03497246274855322, "separable": true, "n_pos": 3, "n_neg": 1, "enabled": true}, "crowd_standing": {"thr": 0.6958532929420471, "scale": 0.05506247282028198, "separable": true, "n_pos": 4, "n_neg": 8, "enabled": true}, "drink_clip": {"thr": 0.5650919377803802, "scale": 0.19773830473423004, "separable": true, "n_pos": 2, "n_neg": 14, "enabled": true}, "next_visit_desk": {"thr": 0.036943215260408876, "scale": 0.0038657409899864673, "separable": false, "n_pos": 2, "n_neg": 3, "enabled": false}, "safe_open": {"thr": 0.08043527280969318, "scale": 0.014014730246606173, "separable": true, "n_pos": 1, "n_neg": 2, "enabled": true}, "next_visit_owl": {"thr": 0.10732194036245346, "scale": 0.05366097018122673, "separable": true, "n_pos": 2, "n_neg": 3, "enabled": true}, "vlm_teller_drinks": {"thr": 0.9, "scale": 0.045000000000000005, "separable": true, "n_pos": 1, "n_neg": 0, "enabled": true}, "vlm_cup_or_food_on_desk": {"thr": 1.0, "scale": 2.5e-07, "separable": false, "n_pos": 1, "n_neg": 2, "enabled": false}, "vlm_handbag_or_coat_on_desk": {"thr": 1.8, "scale": 0.09000000000000001, "separable": true, "n_pos": 1, "n_neg": 0, "enabled": true}, "vlm_client_gives_bag": {"thr": 0.9, "scale": 0.045000000000000005, "separable": true, "n_pos": 1, "n_neg": 0, "enabled": true}, "vlm_cash_left_on_desk": {"thr": 1.0, "scale": 2.5e-07, "separable": false, "n_pos": 3, "n_neg": 5, "enabled": false}, "vlm_documents_or_notebook_left": {"thr": 1.0, "scale": 2.5e-07, "separable": false, "n_pos": 2, "n_neg": 4, "enabled": false}, "vlm_bag_left_on_desk": {"thr": 1.0, "scale": 2.5e-07, "separable": false, "n_pos": 2, "n_neg": 4, "enabled": false}}

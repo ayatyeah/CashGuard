@@ -1,0 +1,17 @@
+[
+  {
+    "times": [
+      4.010309278350515,
+      10.527061855670102,
+      18.046391752577318,
+      23.059278350515463
+    ],
+    "answer": {
+      "client_gives_banknotes": false,
+      "teller_counts_banknotes": false,
+      "teller_returns_banknotes": false,
+      "teller_returns_card_or_paper": false
+    },
+    "seconds": 51.02553597399992
+  }
+]

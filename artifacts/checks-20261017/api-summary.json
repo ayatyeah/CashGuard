@@ -1,0 +1,31 @@
+{
+  "job_id": "7bffdf8f3aace2efa807e0ff5466c918",
+  "status": "done",
+  "verdict": "violation",
+  "demo": false,
+  "filename": "checks-X22.mov",
+  "violations": [
+    {
+      "type": "Ключ оставлен в замке сейфа",
+      "timecode_sec": 14.1,
+      "evidence_shapes": [
+        [
+          848,
+          464,
+          3
+        ],
+        [
+          848,
+          464,
+          3
+        ],
+        [
+          848,
+          464,
+          3
+        ]
+      ],
+      "rule_present": true
+    }
+  ]
+}

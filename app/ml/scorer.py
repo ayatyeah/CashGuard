@@ -20,6 +20,9 @@ STUMPS = {
     "drink_clip": ("drink", "clip", "food_drink", {}),
     "next_visit_desk": ("next_visit", "desk_change", "cash_left_on_desk", {}),
     "safe_open": ("safe", "safe_change", "safe_left_open", {"dur": 3.0}),
+    # OWLv2 on the desk crop between two client visits: item (banknotes / card) appeared after the first client came
+    "next_visit_owl": ("next_visit", "owl_item", "cash_left_on_desk", {}),
+    "safe_key_owl": ("safe_key", "owl_key", "safe_key_left", {}),
 }
 
 # Opt-in experimental features are excluded from the default training set.

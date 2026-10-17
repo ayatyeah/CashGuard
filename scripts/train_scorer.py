@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 import os
 import sys
+import argparse
+from pathlib import Path
 
 import numpy as np
 
@@ -27,15 +29,31 @@ def collect():
     clip = ClipEmbedder(threads=6)
     bank = clip.probe_bank()
     labels = load_labels()
+    key_path = os.path.join(ROOT, "data", "owl_key_scores.json")
+    key_cache = json.load(open(key_path)) if os.path.exists(key_path) else {}
     rows = []
     for name, lab in sorted(labels.items()):
         if lab["split"] != "train":
             continue
         _, sc, cands = candidates_for(name, bank)
+        if name in key_cache:
+            from app.ml.safe_checks import propose_key
+            for c in propose_key(sc, cands):
+                cached = key_cache[name]
+                if abs(c.t - cached["t"]) > 0.001 or c.extra["key_idx"] != cached["idx"]:
+                    raise ValueError(f"Stale key-check cache: {name}")
+                c.f["owl_key"] = float(cached["score"])
+                cands.append(c)
         vdir = os.environ.get("FORTE_VLM_DIR") or os.path.join("data", "vlm_confirmed" if "--vlm-confirmed" in sys.argv else "vlm")
         vpath = os.path.join(ROOT, vdir, f"{name}.json")
         if os.path.exists(vpath):
             cands += M.to_candidates(sc, json.load(open(vpath)))
+        opath = os.path.join(ROOT, "data", "owl", f"{name}.json")
+        if os.path.exists(opath):
+            cache = {float(k): v for k, v in json.load(open(opath)).items()}
+            for c in cands:
+                if c.kind == "next_visit" and round(c.t, 1) in cache:
+                    c.f["owl_item"] = float(cache[round(c.t, 1)])
         types = [t for _, t in lab["types"]] + EXTRA_TYPES.get(name, [])
         for c in cands:
             rows.append({"video": name, "kind": c.kind, "t": c.t, "f": dict(c.f), "vlabel": lab["label"],
@@ -55,11 +73,17 @@ def train(rows, enabled=None):
                         or type_id in EXTRA_TYPES.get(r["video"], []))
                 if near:
                     pos.append(r["f"][feat])
-            elif r["vlabel"] == 0 or (kind == "leave" and r["types"]):
-                # normal videos; for "leave" also leaves annotated with the other leave type
+            elif r["vlabel"] == 0 or kind == "safe_key" or (kind == "leave" and r["types"]):
+                # Key checks also use other violations as negatives: an open door must not become a key alarm.
+                # For "leave", include leaves annotated with the other leave type.
                 neg.append(r["f"][feat])
         st = S.fit_stump(pos, neg)
         if st:
+            if name == "safe_key_owl" and len(pos) < 3:
+                # A single positive cannot justify accepting much weaker responses on a new camera.
+                # Keep the threshold near the observed positive, even if this fold has easy negatives.
+                st["thr"] = max(st["thr"], 0.9 * min(pos))
+                st["calibration"] = "sparse-positive conservative floor"
             st["enabled"] = enabled is None or name in enabled
             model["stumps"][name] = st
     return model
@@ -132,6 +156,13 @@ def accepts_cv(score, best):
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--with-vlm", action="store_true")
+    ap.add_argument("--vlm-confirmed", action="store_true")
+    ap.add_argument("--cv-video", action="store_true")
+    ap.add_argument("--output", default=os.path.join(ROOT, "models", "scorer.json"),
+                    help="Use a separate path to evaluate candidate weights before deployment")
+    args = ap.parse_args()
     # VLM features are evaluated but shipped only with --with-vlm: on the held-out test they added false
     # positives (teller_drinks, client_gives_bag) and found no new violations (docs/ml_model.md)
     with_vlm = "--with-vlm" in sys.argv
@@ -144,7 +175,7 @@ def main():
     originals = [v for v in videos if "base" not in labels[v]]  # metrics on real videos only
     print("CV:", "leave-one-video-out" if by_video else "leave-one-CABINET-out",
           f"({len(set(GROUPS.values()))} groups, {len(videos)} videos, {len(originals)} originals)")
-    EXPERIMENTAL = {"next_visit_desk", "safe_open"}  # new, weakly supported features: kept only if CV does not get worse
+    EXPERIMENTAL = {"next_visit_desk", "safe_open", "next_visit_owl", "safe_key_owl"}  # kept only if CV does not get worse
     base = {k for k in S.STUMPS if not k.startswith("vlm_") and k not in EXPERIMENTAL and k not in S.ZONE_EXPERIMENTAL}
     best = lovo_score(lovo_predict(rows, videos, base), labels, originals)
     print("LOVO base (CV only): loss(2FN+FP)", -best[0], "FP", -best[1])
@@ -165,7 +196,11 @@ def main():
     model = train(rows, enabled)
     report(predict(rows, model), labels, originals, "Final model on train (resubstitution):")
     os.makedirs(os.path.join(ROOT, "models"), exist_ok=True)
-    json.dump(model, open(os.path.join(ROOT, "models", "scorer.json"), "w"), indent=1)
+    destination = Path(args.output)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(json.dumps(model, indent=1))
+    os.replace(temporary, destination)
     print("\nstumps:", json.dumps(model["stumps"], indent=None))
     json.dump(rows, open(os.path.join(ROOT, "data", "train_rows.json"), "w"))
 

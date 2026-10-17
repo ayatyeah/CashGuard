@@ -1,0 +1,26 @@
+{
+  "job_id": "f7cdc3cbc7a1db914ffd626fc7320a1d",
+  "status": "done",
+  "verdict": "violation",
+  "demo": false,
+  "filename": "retrain-X4.mov",
+  "violations": [
+    {
+      "type": "Наличные предыдущего клиента не убраны в сейф при обслуживании следующего",
+      "timecode_sec": 57.1,
+      "evidence_shapes": [
+        [
+          848,
+          464,
+          3
+        ],
+        [
+          848,
+          464,
+          3
+        ]
+      ],
+      "rule_present": true
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "times": [
+    21.555412371134018,
+    23.560567010309278,
+    24.563144329896907
+  ],
+  "answer": {
+    "cash_bundle_visible": false,
+    "cash_handed_to_customer": false,
+    "card_or_document_handover": false
+  },
+  "seconds": 23.959813525999834
+}

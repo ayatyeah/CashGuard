@@ -1,0 +1,118 @@
+{
+ "split": "selected",
+ "evaluation_scope": "Development videos; not an untouched test set",
+ "owl_loaded": true,
+ "vlm_loaded": false,
+ "n": 4,
+ "acc": 1.0,
+ "tp": 1,
+ "fp": 0,
+ "fn": 0,
+ "tn": 3,
+ "recall": 1.0,
+ "precision": 1.0,
+ "t_err_median": 0.09999999999999964,
+ "sec_per_video_max": 36.4,
+ "rows": [
+  {
+   "video": "Х-22",
+   "label": 1,
+   "pred": 1,
+   "events": [
+    [
+     "safe_key_left",
+     14.1,
+     0.881
+    ]
+   ],
+   "ts": [
+    14.0
+   ],
+   "t_err": 0.09999999999999964,
+   "sec": 30.3,
+   "duration": 21.0,
+   "warnings": [],
+   "timings": {
+    "perception": 20.25,
+    "clip": 1.53,
+    "budget": 90.0,
+    "step": 15,
+    "vlm_moments": 0,
+    "owl_key_candidates": 1,
+    "owl_key_max": 0.051856402307748795,
+    "total": 30.3,
+    "frames": 42,
+    "fps": 2.0
+   }
+  },
+  {
+   "video": "Х-23",
+   "label": 0,
+   "pred": 0,
+   "events": [],
+   "ts": [],
+   "t_err": null,
+   "sec": 27.7,
+   "duration": 18.3,
+   "warnings": [],
+   "timings": {
+    "perception": 17.65,
+    "clip": 1.52,
+    "budget": 90.0,
+    "step": 15,
+    "vlm_moments": 0,
+    "owl_key_candidates": 1,
+    "owl_key_max": 0.0,
+    "total": 27.66,
+    "frames": 37,
+    "fps": 2.0
+   }
+  },
+  {
+   "video": "Х-29",
+   "label": 0,
+   "pred": 0,
+   "events": [],
+   "ts": [],
+   "t_err": null,
+   "sec": 26.7,
+   "duration": 17.3,
+   "warnings": [],
+   "timings": {
+    "perception": 16.73,
+    "clip": 1.41,
+    "budget": 90.0,
+    "step": 15,
+    "vlm_moments": 0,
+    "owl_key_candidates": 1,
+    "owl_key_max": 0.0,
+    "total": 26.72,
+    "frames": 35,
+    "fps": 2.0
+   }
+  },
+  {
+   "video": "Х-31",
+   "label": 0,
+   "pred": 0,
+   "events": [],
+   "ts": [],
+   "t_err": null,
+   "sec": 36.4,
+   "duration": 23.8,
+   "warnings": [],
+   "timings": {
+    "perception": 26.21,
+    "clip": 1.79,
+    "budget": 90.0,
+    "step": 15,
+    "vlm_moments": 0,
+    "owl_key_candidates": 1,
+    "owl_key_max": 0.04071053862571716,
+    "total": 36.4,
+    "frames": 48,
+    "fps": 2.0
+   }
+  }
+ ]
+}

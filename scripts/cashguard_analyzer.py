@@ -39,6 +39,8 @@ def main() -> int:
         waited = max(0.0, T0 - os.path.getmtime(path))
     except OSError:
         waited = 0.0
+    if waited > jury_limit:  # not a fresh upload (CLI run on an old file) → full budget
+        waited = 0.0
     budget = min(float(os.environ.get("ANALYZER_BUDGET_SEC", "240")), jury_limit - waited) - (time.time() - T0)
     budget = max(budget, 25.0)  # always return something rather than nothing
     print(f"queue wait {waited:.0f}s, budget {budget:.0f}s", file=sys.stderr)

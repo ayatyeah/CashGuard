@@ -32,6 +32,15 @@ class MLAnalyzer:
             print(f"CLIP disabled: {e}", file=__import__("sys").stderr)
             self.clip = None
         self.models = pipeline.Models()
+        self.owl = None
+        if os.environ.get("FORTE_USE_OWL", "0") == "1" and any(
+                k in {"next_visit_owl", "safe_key_owl"} and st.get("enabled", True)
+                for k, st in self.models.scorer.get("stumps", {}).items()):
+            try:
+                from app.ml.ovd import Owl
+                self.owl = Owl(threads=threads)
+            except Exception as e:
+                print(f"OWL disabled: {e}", file=__import__("sys").stderr)
         self.vlm = None
         if os.environ.get("FORTE_USE_VLM", "0") == "1" and pipeline.uses_vlm(self.models):
             try:
@@ -131,7 +140,10 @@ class MLAnalyzer:
             vlm_budget = 0.0  # not enough time for the VLM → CV-only result (never a timeout)
         events, info = pipeline.run(obs, frames, W, H, self.models, clip=self.clip, clip_wa=clip_wa,
                                     vlm=self.vlm, get_frame=get_frame, vlm_budget=vlm_budget,
-                                    truncated=truncated)
+                                    truncated=truncated, owl=self.owl,
+                                    inference_budget=max(0.0, budget_sec - (time.time() - t0) - 20.0))
+        if info.get("owl_skipped"):
+            warnings.append(f"OWL: не завершено проверок предметов: {info['owl_skipped']} (нет времени)")
         if info.get("vlm_skipped"):
             warnings.append(f"VLM: пропущено {info['vlm_skipped']} из {info['vlm_moments']} моментов (нет времени)")
 
@@ -147,5 +159,7 @@ class MLAnalyzer:
                               timings={"perception": round(t_perc, 2), "clip": round(t_clip, 2),
                                        "budget": round(budget_sec, 1), "step": step,
                                        "vlm_moments": info.get("vlm_moments", 0),
+                                       "owl_key_candidates": info.get("owl_key_candidates", 0),
+                                       "owl_key_max": info.get("owl_key_max", 0.0),
                                        "total": round(time.time() - t0, 2), "frames": len(obs), "fps": fps},
                               mode=mode)

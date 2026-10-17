@@ -1,0 +1,20 @@
+load /home/yeahayat/ForteWin/scripts/../app/ml/../../models/rtmpose_m/20230831/rtmpose_onnx/rtmpose-m_simcc-body7_pt-body7_420e-256x192-e48f03d0_20230504/end2end.onnx with onnxruntime backend
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 35318.59it/s]
+Loading weights:   0%|          | 0/418 [00:00<?, ?it/s]Loading weights:  29%|██▉       | 121/418 [00:00<00:00, 1201.60it/s]Loading weights:  58%|█████▊    | 242/418 [00:00<00:00, 1005.95it/s]Loading weights:  83%|████████▎ | 345/418 [00:00<00:00, 696.67it/s] Loading weights: 100%|██████████| 418/418 [00:00<00:00, 766.76it/s]
+Loading weights:   0%|          | 0/625 [00:00<?, ?it/s]Loading weights: 100%|██████████| 625/625 [00:00<00:00, 9306.48it/s]
+Х-38  y=1 pred=1 OK  [('cash_left_on_desk', 32.5, 0.974)] ts=[33.0] err=0.5 time=226s/59s
+Х-19  y=0 pred=0 OK  [] ts=[] err=None time=221s/57s
+X-1   y=1 pred=0 ERR [] ts=[22.0] err=None time=124s/26s
+{
+ "split": "test",
+ "n": 3,
+ "acc": 0.6666666666666666,
+ "tp": 1,
+ "fp": 0,
+ "fn": 1,
+ "tn": 1,
+ "recall": 0.5,
+ "precision": 1.0,
+ "t_err_median": 0.5,
+ "sec_per_video_max": 226.4
+}

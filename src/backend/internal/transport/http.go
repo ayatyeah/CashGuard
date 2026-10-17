@@ -16,6 +16,17 @@ import (
 
 var idPattern = regexp.MustCompile(`^[a-f0-9]{32}$`)
 
+// torView maps the internal job to the jury contract (ТЗ §10): statuses are only processing/done/failed.
+func torView(j domain.Job) domain.Job {
+	if j.Status == "queued" {
+		j.Status = "processing"
+	}
+	if j.Violations == nil {
+		j.Violations = []domain.Violation{}
+	}
+	return j
+}
+
 func Router(s *usecase.Service, key, uploads string) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
@@ -60,16 +71,19 @@ func Router(s *usecase.Service, key, uploads string) *gin.Engine {
 		}
 		c.JSON(200, j)
 	})
-	api.POST("/jobs", func(c *gin.Context) {
+	upload := func(c *gin.Context, tor bool) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 501<<20)
 		if e := c.Request.ParseMultipartForm(8 << 20); e != nil {
 			c.JSON(400, gin.H{"error": "Некорректная загрузка или файл больше 500 МБ"})
 			return
 		}
 		defer c.Request.MultipartForm.RemoveAll()
-		f, h, e := c.Request.FormFile("video")
+		f, h, e := c.Request.FormFile("file") // ТЗ §10: поле file
 		if e != nil {
-			c.JSON(400, gin.H{"error": "Поле video обязательно"})
+			f, h, e = c.Request.FormFile("video") // интерфейс
+		}
+		if e != nil {
+			c.JSON(400, gin.H{"error": "Поле file (или video) обязательно"})
 			return
 		}
 		defer f.Close()
@@ -117,7 +131,31 @@ func Router(s *usecase.Service, key, uploads string) *gin.Engine {
 			c.JSON(503, gin.H{"error": "Не удалось поставить видео в очередь"})
 			return
 		}
+		if tor {
+			c.JSON(200, gin.H{"job_id": j.ID, "status": "processing"})
+			return
+		}
 		c.JSON(202, j)
+	}
+	api.POST("/jobs", func(c *gin.Context) { upload(c, false) })
+	// ---- ТЗ §10: контракт для жюри
+	api.POST("/v1/analyze", func(c *gin.Context) { upload(c, true) })
+	api.GET("/v1/jobs/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		if !idPattern.MatchString(id) {
+			c.JSON(404, gin.H{"error": "job not found"})
+			return
+		}
+		j, e := s.Repo.Get(id)
+		if errors.Is(e, domain.ErrNotFound) {
+			c.JSON(404, gin.H{"error": "job not found"})
+			return
+		}
+		if e != nil {
+			c.JSON(500, gin.H{"error": "read error"})
+			return
+		}
+		c.JSON(200, torView(j))
 	})
 	api.GET("/jobs/:id/video", func(c *gin.Context) {
 		id := c.Param("id")

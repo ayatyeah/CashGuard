@@ -1,0 +1,882 @@
+{
+  "X-1": {
+    "cash_returned_to_client": {
+      "max": 0.08361445118983586,
+      "t": 8.02061855670103,
+      "near": 0.07093729575475057
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.08877807358900705,
+      "t": 4.010309278350515,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0001925542310345918,
+      "t": 4.010309278350515,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5617925723393757,
+      "t": 2.506443298969072,
+      "near": null
+    }
+  },
+  "X-2": {
+    "cash_returned_to_client": {
+      "max": 0.12893396119276682,
+      "t": 11.04313725490196,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.17891948173443475,
+      "t": 8.031372549019608,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00011073715722886845,
+      "t": 4.015686274509804,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5932199756304423,
+      "t": 4.517647058823529,
+      "near": null
+    }
+  },
+  "Х-10": {
+    "cash_returned_to_client": {
+      "max": 0.0746459017197291,
+      "t": 12.5,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.02426963268468777,
+      "t": 0.5,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 6.196368000625321e-05,
+      "t": 10.0,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.14816738168398538,
+      "t": 2.5,
+      "near": null
+    }
+  },
+  "Х-11": {
+    "cash_returned_to_client": {
+      "max": 0.22691281636555988,
+      "t": 19.576470588235296,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.8998930851618447,
+      "t": 19.576470588235296,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0355768334120512,
+      "t": 15.56078431372549,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.6927233139673868,
+      "t": 20.580392156862747,
+      "near": null
+    }
+  },
+  "Х-12": {
+    "cash_returned_to_client": {
+      "max": 0.30224256217479706,
+      "t": 21.533938437253354,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.9091174006462097,
+      "t": 30.04735595895817,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.07215551535288492,
+      "t": 41.565509076558804,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.6691937645276387,
+      "t": 36.55761641673244,
+      "near": null
+    }
+  },
+  "Х-13": {
+    "cash_returned_to_client": {
+      "max": 0.19308736672004062,
+      "t": 35.55444785276074,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.8126341501871744,
+      "t": 47.5728527607362,
+      "near": 0.8126341501871744
+    },
+    "safe_key_left": {
+      "max": 0.01366652843231956,
+      "t": 62.595858895705526,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.7271479368209839,
+      "t": 64.5989263803681,
+      "near": null
+    }
+  },
+  "Х-14": {
+    "cash_returned_to_client": {
+      "max": 0.27821337431669235,
+      "t": 36.525626023870814,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.9564306537310282,
+      "t": 33.52351977533349,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.004802113864570855,
+      "t": 35.524923941025044,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.7576068639755249,
+      "t": 41.5291364380997,
+      "near": null
+    }
+  },
+  "Х-15": {
+    "cash_returned_to_client": {
+      "max": 0.09823068231344222,
+      "t": 12.038461538461538,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.7732842167218525,
+      "t": 13.543269230769232,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.018499682657420635,
+      "t": 20.064102564102566,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.6243377327919006,
+      "t": 16.552884615384617,
+      "near": null
+    }
+  },
+  "Х-16": {
+    "cash_returned_to_client": {
+      "max": 0.09541664272546768,
+      "t": 14.54264705882353,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.3516838749249776,
+      "t": 19.05588235294118,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00023525631210456288,
+      "t": 16.548529411764708,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5215684076150258,
+      "t": 19.55735294117647,
+      "near": null
+    }
+  },
+  "Х-17": {
+    "cash_returned_to_client": {
+      "max": 0.08480593810478845,
+      "t": 8.0,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.21230238676071167,
+      "t": 10.0,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00043154435115866363,
+      "t": 10.0,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.49172867337862647,
+      "t": 8.5,
+      "near": null
+    }
+  },
+  "Х-18": {
+    "cash_returned_to_client": {
+      "max": 0.08022047330935796,
+      "t": 13.038461538461538,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.06966701770822206,
+      "t": 21.062130177514792,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00021701065998058763,
+      "t": 21.56360946745562,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.45739428202311194,
+      "t": 18.55473372781065,
+      "near": null
+    }
+  },
+  "Х-19": {
+    "cash_returned_to_client": {
+      "max": 0.08285175139705339,
+      "t": 10.017441860465116,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.06139673168460528,
+      "t": 4.006976744186047,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00039119625580497086,
+      "t": 51.08895348837209,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5303004284699757,
+      "t": 3.005232558139535,
+      "near": null
+    }
+  },
+  "Х-20": {
+    "cash_returned_to_client": {
+      "max": 0.15914139648278555,
+      "t": 0.5,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.6421689788500468,
+      "t": 0.5,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.01414221463104089,
+      "t": 1.5,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.622447262207667,
+      "t": 0.5,
+      "near": null
+    }
+  },
+  "Х-21": {
+    "cash_returned_to_client": {
+      "max": 0.09144945939381917,
+      "t": 7.035897435897436,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.6499853730201721,
+      "t": 5.528205128205128,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.006884702015668153,
+      "t": 5.0256410256410255,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.6076028247674305,
+      "t": 0.5025641025641026,
+      "near": null
+    }
+  },
+  "Х-22": {
+    "cash_returned_to_client": {
+      "max": 0.12425389389197031,
+      "t": 7.0334394904458595,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.9173919161160786,
+      "t": 12.559713375796179,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.010614726847658554,
+      "t": 15.574044585987261,
+      "near": 0.010614726847658554
+    },
+    "rejects_merged": {
+      "max": 0.6114532550175984,
+      "t": 10.047770700636942,
+      "near": null
+    }
+  },
+  "Х-23": {
+    "cash_returned_to_client": {
+      "max": 0.12160504360993703,
+      "t": 6.03302752293578,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.7765344381332397,
+      "t": 13.574311926605505,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.013859346974641083,
+      "t": 11.060550458715596,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.4237870375315348,
+      "t": 17.596330275229356,
+      "near": null
+    }
+  },
+  "Х-24": {
+    "cash_returned_to_client": {
+      "max": 0.037027180194854736,
+      "t": 6.0,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.4759400089581807,
+      "t": 7.5,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.008627466702212889,
+      "t": 10.0,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.33351876338322956,
+      "t": 6.0,
+      "near": null
+    }
+  },
+  "Х-25": {
+    "cash_returned_to_client": {
+      "max": 0.07082249348362286,
+      "t": 23.524736842105263,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.7783010403315226,
+      "t": 20.02105263157895,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.01578467432409525,
+      "t": 20.521578947368422,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.4527692496776581,
+      "t": 19.02,
+      "near": null
+    }
+  },
+  "Х-26": {
+    "cash_returned_to_client": {
+      "max": 0.06880269572138786,
+      "t": 11.037162162162161,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.5956108868122101,
+      "t": 17.05743243243243,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00670346908736974,
+      "t": 14.047297297297296,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5113064845403035,
+      "t": 17.05743243243243,
+      "near": null
+    }
+  },
+  "Х-27": {
+    "cash_returned_to_client": {
+      "max": 0.06626149142781892,
+      "t": 10.02528445006321,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.6944110989570618,
+      "t": 12.531605562579015,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.006605970362822214,
+      "t": 16.5417193426043,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.44822680950164795,
+      "t": 10.02528445006321,
+      "near": null
+    }
+  },
+  "Х-28": {
+    "cash_returned_to_client": {
+      "max": 0.051372037579615906,
+      "t": 7.560975609756098,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.2268497844537099,
+      "t": 8.065040650406504,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0008275186604199309,
+      "t": 12.601626016260163,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.37905067205429077,
+      "t": 8.065040650406504,
+      "near": null
+    }
+  },
+  "Х-29": {
+    "cash_returned_to_client": {
+      "max": 0.08904499808947244,
+      "t": 7.558252427184466,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.532581736644109,
+      "t": 11.085436893203884,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0013820963407245774,
+      "t": 16.628155339805826,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.3758908212184906,
+      "t": 16.628155339805826,
+      "near": null
+    }
+  },
+  "Х-3": {
+    "cash_returned_to_client": {
+      "max": 0.09528755644957224,
+      "t": 9.030050083472455,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.08234162628650665,
+      "t": 2.508347245409015,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0001467103065806441,
+      "t": 4.013355592654424,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5519541303316752,
+      "t": 3.010016694490818,
+      "near": null
+    }
+  },
+  "Х-30": {
+    "cash_returned_to_client": {
+      "max": 0.31858014067014057,
+      "t": 16.056939501779357,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.8049077788988749,
+      "t": 2.508896797153025,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.017370663272837795,
+      "t": 2.508896797153025,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5565991501013438,
+      "t": 11.540925266903914,
+      "near": null
+    }
+  },
+  "Х-31": {
+    "cash_returned_to_client": {
+      "max": 0.2690502951542536,
+      "t": 9.037974683544304,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.9120852549870808,
+      "t": 9.037974683544304,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.020098203482727207,
+      "t": 7.531645569620253,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.6810542941093445,
+      "t": 10.544303797468354,
+      "near": null
+    }
+  },
+  "Х-32": {
+    "cash_returned_to_client": {
+      "max": 0.12862597157557804,
+      "t": 15.548665620094193,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.7717172106107075,
+      "t": 3.009419152276295,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.016092886216938496,
+      "t": 3.009419152276295,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.6465107202529907,
+      "t": 17.554945054945055,
+      "near": null
+    }
+  },
+  "Х-33": {
+    "cash_returned_to_client": {
+      "max": 0.05405847107370694,
+      "t": 6.0,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.5877457360426585,
+      "t": 3.0,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.03318341417858998,
+      "t": 2.5,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5498631695906321,
+      "t": 6.5,
+      "near": null
+    }
+  },
+  "Х-34": {
+    "cash_returned_to_client": {
+      "max": 0.04523283988237381,
+      "t": 11.041509433962265,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.33309706052144367,
+      "t": 12.045283018867925,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00040687611423588044,
+      "t": 14.554716981132076,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5444030662377675,
+      "t": 12.045283018867925,
+      "near": null
+    }
+  },
+  "Х-35": {
+    "cash_returned_to_client": {
+      "max": 0.04490001996358235,
+      "t": 32.05647058823529,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.3434686263402303,
+      "t": 6.010588235294118,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00044704911609490705,
+      "t": 3.005294117647059,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.6546550194422404,
+      "t": 5.008823529411765,
+      "near": null
+    }
+  },
+  "Х-37": {
+    "cash_returned_to_client": {
+      "max": 0.04840668787558873,
+      "t": 12.579281183932347,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.27355019748210907,
+      "t": 4.528541226215645,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.000304755027173087,
+      "t": 4.025369978858351,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.47499106327692664,
+      "t": 4.528541226215645,
+      "near": null
+    }
+  },
+  "Х-38": {
+    "cash_returned_to_client": {
+      "max": 0.04689842462539673,
+      "t": 11.012450481041313,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.5369558334350586,
+      "t": 54.561686474250145,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0016070208706272144,
+      "t": 54.06112054329372,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5748648842175801,
+      "t": 4.5050933786078105,
+      "near": null
+    }
+  },
+  "Х-39": {
+    "cash_returned_to_client": {
+      "max": 0.06611871098478635,
+      "t": 10.012717253073337,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.421970268090566,
+      "t": 3.504451038575668,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0006787744156705836,
+      "t": 37.547689699025014,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.7000263134638468,
+      "t": 74.0941076727427,
+      "near": null
+    }
+  },
+  "Х-4": {
+    "cash_returned_to_client": {
+      "max": 0.08286643028259277,
+      "t": 68.12494258153421,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.1264306716620922,
+      "t": 59.108406063389985,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0002925083778488139,
+      "t": 53.097381717960495,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.48700821399688715,
+      "t": 9.016536518144235,
+      "near": null
+    }
+  },
+  "Х-40": {
+    "cash_returned_to_client": {
+      "max": 0.23796831568082172,
+      "t": 7.027814569536424,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.9605060617129008,
+      "t": 4.517880794701987,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.031180306648214653,
+      "t": 1.5059602649006623,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.7725390791893005,
+      "t": 4.517880794701987,
+      "near": null
+    }
+  },
+  "Х-43": {
+    "cash_returned_to_client": {
+      "max": 0.05909624695777893,
+      "t": 21.06008583690987,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.08326174442966779,
+      "t": 8.022889842632331,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00013058213153271936,
+      "t": 0.5014306151645207,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.24187370638052622,
+      "t": 2.005722460658083,
+      "near": null
+    }
+  },
+  "Х-44": {
+    "cash_returned_to_client": {
+      "max": 0.1593696226676305,
+      "t": 11.017973856209151,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.1459155020614465,
+      "t": 3.505718954248366,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00034242828648226953,
+      "t": 13.02124183006536,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.2822592556476593,
+      "t": 12.019607843137255,
+      "near": 0.2822592556476593
+    }
+  },
+  "Х-45": {
+    "cash_returned_to_client": {
+      "max": 0.09851340452829996,
+      "t": 4.016064257028113,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.1489224111040433,
+      "t": 11.04417670682731,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0003094713150251967,
+      "t": 8.032128514056225,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.4357645511627197,
+      "t": 1.5060240963855422,
+      "near": null
+    }
+  },
+  "Х-46": {
+    "cash_returned_to_client": {
+      "max": 0.0674237913141648,
+      "t": 0.5017482517482518,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.11426026063660778,
+      "t": 0.5017482517482518,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.00022917679355790216,
+      "t": 0.5017482517482518,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.46395235757033026,
+      "t": 0.5017482517482518,
+      "near": null
+    }
+  },
+  "Х-5": {
+    "cash_returned_to_client": {
+      "max": 0.08641404410203297,
+      "t": 12.517482517482517,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.21927217642466226,
+      "t": 67.09370629370629,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.0005123729836971809,
+      "t": 1.5020979020979022,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.5973072648048401,
+      "t": 64.59020979020978,
+      "near": null
+    }
+  },
+  "Х-8": {
+    "cash_returned_to_client": {
+      "max": 0.16060475508371988,
+      "t": 20.017543859649123,
+      "near": null
+    },
+    "collection_bag_emptied_no_count": {
+      "max": 0.5405371089776356,
+      "t": 24.521491228070175,
+      "near": null
+    },
+    "safe_key_left": {
+      "max": 0.022104496446748573,
+      "t": 24.521491228070175,
+      "near": null
+    },
+    "rejects_merged": {
+      "max": 0.4527044892311096,
+      "t": 25.021929824561404,
+      "near": null
+    }
+  }
+}

@@ -1,0 +1,23 @@
+load /home/yeahayat/ForteWin/artifacts/checks-20261017/candidate-models/end2end.onnx with onnxruntime backend
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 33751.17it/s]
+Loading weights:   0%|          | 0/418 [00:00<?, ?it/s]Loading weights: 100%|██████████| 418/418 [00:00<00:00, 9797.53it/s]
+Х-22  y=1 pred=1 OK  [('safe_key_left', 14.1, 0.881)] ts=[14.0] err=0.09999999999999964 time=30s/21s
+Х-23  y=0 pred=0 OK  [] ts=[] err=None time=28s/18s
+Х-29  y=0 pred=0 OK  [] ts=[] err=None time=27s/17s
+Х-31  y=0 pred=0 OK  [] ts=[] err=None time=36s/24s
+{
+ "split": "selected",
+ "evaluation_scope": "Development videos; not an untouched test set",
+ "owl_loaded": true,
+ "vlm_loaded": false,
+ "n": 4,
+ "acc": 1.0,
+ "tp": 1,
+ "fp": 0,
+ "fn": 0,
+ "tn": 3,
+ "recall": 1.0,
+ "precision": 1.0,
+ "t_err_median": 0.09999999999999964,
+ "sec_per_video_max": 36.4
+}

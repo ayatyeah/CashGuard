@@ -58,6 +58,21 @@ func main() {
 		addr = "127.0.0.1:8080"
 	}
 	router := transport.Router(s, key, uploads)
+	if static := os.Getenv("STATIC_DIR"); static != "" { // single-container deploy: React build served by Go
+		router.NoRoute(func(c *gin.Context) {
+			p := c.Request.URL.Path
+			if len(p) >= 4 && p[:4] == "/api" {
+				c.JSON(404, gin.H{"error": "not found"})
+				return
+			}
+			full := filepath.Join(static, filepath.Clean("/"+p))
+			if st, err := os.Stat(full); err == nil && !st.IsDir() {
+				c.File(full)
+				return
+			}
+			c.File(filepath.Join(static, "index.html"))
+		})
+	}
 	router.GET("/api/ready", func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 		defer cancel()

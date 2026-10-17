@@ -4,6 +4,7 @@ scene → candidates → trained scorer → deduplicated events with description
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -42,7 +43,8 @@ class Models:
 
 def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None = None,
         vlm=None, get_frame=None, vlm_budget: float | None = None, vlm_moments: list | None = None,
-        truncated: bool = False) -> tuple[list[Event], dict]:
+        truncated: bool = False, owl=None, owl_cache: dict | None = None,
+        inference_budget: float | None = None) -> tuple[list[Event], dict]:
     """obs: FrameObs list; frames: aligned BGR frames (any scale); clip: ClipEmbedder (optional);
     vlm + get_frame(obs_index → full-res BGR): optional VLM verification of key moments (within vlm_budget s);
     vlm_moments: precomputed answered moments (offline evaluation)."""
@@ -52,6 +54,53 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
     cands = generate(scene, frames, probes)
     if truncated:  # "never came back" cannot be established on a cut video
         cands = [c for c in cands if c.kind != "leave"]
+    if models.scorer.get("stumps", {}).get("safe_key_owl", {}).get("enabled", False):
+        from .safe_checks import propose_key
+        cands += propose_key(scene, cands)
+    owl_started = time.monotonic()
+    owl_skipped = 0
+    owl_cost = 12.0
+    for c in cands:  # optional open-vocabulary check of the desk between visits
+        if c.kind == "safe_key" and owl is not None and get_frame is not None:
+            scores = []
+            for i in c.extra["key_idx"]:
+                if inference_budget is not None and time.monotonic() - owl_started + owl_cost > inference_budget:
+                    break
+                started = time.monotonic()
+                scores.append(owl.key_score(get_frame(i), c.extra["key_box"]))
+                owl_cost = max(owl_cost, 1.25 * (time.monotonic() - started))
+            if len(scores) == 2:
+                c.f["owl_key"] = min(scores)  # persistent in both views, not one noisy detection
+            else:
+                owl_skipped += 1
+            continue
+        if c.kind != "next_visit":
+            continue
+        key = round(c.t, 1)
+        if owl_cache is not None and key in owl_cache:
+            c.f["owl_item"] = float(owl_cache[key])
+        elif owl is not None and get_frame is not None and c.extra.get("desk_box") is not None:
+            from .candidates import _persons
+            values = []
+            complete = True
+            for idxs in (c.extra["gap_idx"], c.extra["pre_idx"]):
+                scores = []
+                for i in idxs:
+                    if inference_budget is not None and time.monotonic() - owl_started + owl_cost > inference_budget:
+                        complete = False
+                        break
+                    started = time.monotonic()
+                    scores.append(owl.item_score(get_frame(i), c.extra["desk_box"], _persons(obs[i], 0.3)))
+                    owl_cost = max(owl_cost, 1.25 * (time.monotonic() - started))
+                if not complete:
+                    break
+                values.append(max(scores, default=0.0))
+            if complete:
+                c.f["owl_item"] = max(0.0, values[0] - values[1])
+            else:
+                owl_skipped += 1  # never score a partially checked window
+    if vlm_budget is not None:
+        vlm_budget = max(0.0, vlm_budget - (time.monotonic() - owl_started))
     moms = vlm_moments
     if moms is None and vlm is not None and get_frame is not None and uses_vlm(models) and \
             (vlm_budget is None or vlm_budget > 30):
@@ -77,7 +126,9 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
         kept.append(e)
     kept = sorted(kept, key=lambda e: -e.p)[:3]
     kept.sort(key=lambda e: e.t)
-    info = {"n_candidates": len(cands), "cashier_found": scene.seat is not None,
+    info = {"owl_key_candidates": sum(c.kind == "safe_key" for c in cands),
+            "owl_key_max": max((c.f.get("owl_key", 0.0) for c in cands if c.kind == "safe_key"), default=0.0),
+            "owl_skipped": owl_skipped, "n_candidates": len(cands), "cashier_found": scene.seat is not None,
             "vlm_moments": len(moms or []), "vlm_skipped": sum(1 for m in (moms or []) if m.get("skipped")),
             "candidates": [(c.kind, round(c.t, 1), {k: round(float(v), 3) for k, v in c.f.items()}) for c in cands]}
     return kept, info

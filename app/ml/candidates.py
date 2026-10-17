@@ -20,15 +20,15 @@ import numpy as np
 from .events import BAGS, DRINK, Scene, C, _anchor
 from .perception import COCO
 
-KINDS = ["leave", "entry", "crowd", "short_visit", "drink", "phone", "bag", "next_visit", "safe"]
+KINDS = ["leave", "entry", "crowd", "short_visit", "drink", "phone", "bag", "next_visit", "safe", "safe_key"]
 DEFAULT_TYPE = {
     "leave": "left_cash_unattended", "entry": "door_left_open", "crowd": "unauthorized_person",
     "short_visit": "count_not_in_client_presence", "drink": "food_drink", "phone": "phone_use", "bag": "personal_items",
-    "next_visit": "cash_left_on_desk", "safe": "safe_left_open",
+    "next_visit": "cash_left_on_desk", "safe": "safe_left_open", "safe_key": "safe_key_left",
 }
 FEATS = ["rem", "max_d", "end_gap", "end_score", "screen", "items", "desk_probe", "light_drop", "door_change",
          "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob", "safe_change",
-         "persistent_change", "zncc_change", "small_residual", "client_remains"]
+         "persistent_change", "zncc_change", "small_residual", "client_remains", "owl_item", "owl_key"]
 
 
 @dataclass
@@ -398,9 +398,12 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
                 if vals:
                     te = max(a1, b0 - 3.0)
                     ie = _idx(scene, te)
-                    cands.append(Cand("next_visit", te, ie, [ie, gap[-1]],
-                                      {"desk_change": float(np.median(vals)), "dur": float(a1 - a0),
-                                       "desk_blob": float(np.median(blobs)) if blobs else 0.0}))
+                    c = Cand("next_visit", te, ie, [ie, gap[-1]],
+                             {"desk_change": float(np.median(vals)), "dur": float(a1 - a0),
+                              "desk_blob": float(np.median(blobs)) if blobs else 0.0})
+                    pre = [j for j in range(len(obs)) if a0 - 2.0 <= times[j] <= a0 + 1.0][:2]
+                    c.extra = {"gap_idx": gap[-3:], "pre_idx": pre, "desk_box": desk}
+                    cands.append(c)
                     if os.environ.get("FORTE_ZONE_PROTOTYPES") == "1":
                         from .zone_prototypes import residual_features
                         cands[-1].f.update(residual_features(gray[i_a], proto_targets, proto_masks, scene.ref_h * scale))

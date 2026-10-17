@@ -1,0 +1,2 @@
+Loading weights:   0%|          | 0/625 [00:00<?, ?it/s]Loading weights: 100%|██████████| 625/625 [00:00<00:00, 10420.98it/s]
+X-1 {'times': [4.010309278350515, 10.527061855670102, 18.046391752577318, 23.059278350515463], 'answer': {'client_gives_banknotes': False, 'teller_counts_banknotes': False, 'teller_returns_banknotes': False, 'teller_returns_card_or_paper': False}, 'seconds': 51.02553597399992}

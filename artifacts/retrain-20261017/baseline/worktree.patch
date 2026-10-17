@@ -1,0 +1,258 @@
+diff --git a/app/analyzers/ml.py b/app/analyzers/ml.py
+index b610b2f..e848f67 100644
+--- a/app/analyzers/ml.py
++++ b/app/analyzers/ml.py
+@@ -32,6 +32,14 @@ class MLAnalyzer:
+             print(f"CLIP disabled: {e}", file=__import__("sys").stderr)
+             self.clip = None
+         self.models = pipeline.Models()
++        self.owl = None
++        if os.environ.get("FORTE_USE_OWL", "0") == "1" and any(
++                k == "next_visit_owl" and st.get("enabled", True) for k, st in self.models.scorer.get("stumps", {}).items()):
++            try:
++                from app.ml.ovd import Owl
++                self.owl = Owl(threads=threads)
++            except Exception as e:
++                print(f"OWL disabled: {e}", file=__import__("sys").stderr)
+         self.vlm = None
+         if os.environ.get("FORTE_USE_VLM", "0") == "1" and pipeline.uses_vlm(self.models):
+             try:
+@@ -131,7 +139,7 @@ class MLAnalyzer:
+             vlm_budget = 0.0  # not enough time for the VLM → CV-only result (never a timeout)
+         events, info = pipeline.run(obs, frames, W, H, self.models, clip=self.clip, clip_wa=clip_wa,
+                                     vlm=self.vlm, get_frame=get_frame, vlm_budget=vlm_budget,
+-                                    truncated=truncated)
++                                    truncated=truncated, owl=self.owl)
+         if info.get("vlm_skipped"):
+             warnings.append(f"VLM: пропущено {info['vlm_skipped']} из {info['vlm_moments']} моментов (нет времени)")
+ 
+diff --git a/app/ml/candidates.py b/app/ml/candidates.py
+index 71035da..4539ac7 100644
+--- a/app/ml/candidates.py
++++ b/app/ml/candidates.py
+@@ -28,7 +28,7 @@ DEFAULT_TYPE = {
+ }
+ FEATS = ["rem", "max_d", "end_gap", "end_score", "screen", "items", "desk_probe", "light_drop", "door_change",
+          "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob", "safe_change",
+-         "persistent_change", "zncc_change", "small_residual", "client_remains"]
++         "persistent_change", "zncc_change", "small_residual", "client_remains", "owl_item"]
+ 
+ 
+ @dataclass
+@@ -398,9 +398,12 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
+                 if vals:
+                     te = max(a1, b0 - 3.0)
+                     ie = _idx(scene, te)
+-                    cands.append(Cand("next_visit", te, ie, [ie, gap[-1]],
+-                                      {"desk_change": float(np.median(vals)), "dur": float(a1 - a0),
+-                                       "desk_blob": float(np.median(blobs)) if blobs else 0.0}))
++                    c = Cand("next_visit", te, ie, [ie, gap[-1]],
++                             {"desk_change": float(np.median(vals)), "dur": float(a1 - a0),
++                              "desk_blob": float(np.median(blobs)) if blobs else 0.0})
++                    pre = [j for j in range(len(obs)) if a0 - 2.0 <= times[j] <= a0 + 1.0][:2]
++                    c.extra = {"gap_idx": gap[-3:], "pre_idx": pre, "desk_box": desk}
++                    cands.append(c)
+                     if os.environ.get("FORTE_ZONE_PROTOTYPES") == "1":
+                         from .zone_prototypes import residual_features
+                         cands[-1].f.update(residual_features(gray[i_a], proto_targets, proto_masks, scene.ref_h * scale))
+diff --git a/app/ml/pipeline.py b/app/ml/pipeline.py
+index aabe594..5000a43 100644
+--- a/app/ml/pipeline.py
++++ b/app/ml/pipeline.py
+@@ -42,7 +42,7 @@ class Models:
+ 
+ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None = None,
+         vlm=None, get_frame=None, vlm_budget: float | None = None, vlm_moments: list | None = None,
+-        truncated: bool = False) -> tuple[list[Event], dict]:
++        truncated: bool = False, owl=None, owl_cache: dict | None = None) -> tuple[list[Event], dict]:
+     """obs: FrameObs list; frames: aligned BGR frames (any scale); clip: ClipEmbedder (optional);
+     vlm + get_frame(obs_index → full-res BGR): optional VLM verification of key moments (within vlm_budget s);
+     vlm_moments: precomputed answered moments (offline evaluation)."""
+@@ -64,6 +64,17 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
+         M.confirm_positives(vlm, moms, get_frame, W, H, len(obs), budget_sec=left)
+     if moms:
+         cands += M.to_candidates(scene, moms)
++    for c in cands:  # optional open-vocabulary check of the desk between visits
++        if c.kind != "next_visit":
++            continue
++        key = round(c.t, 1)
++        if owl_cache is not None and key in owl_cache:
++            c.f["owl_item"] = float(owl_cache[key])
++        elif owl is not None and get_frame is not None and c.extra.get("desk_box") is not None:
++            from .candidates import _persons
++            def sc_(idxs):
++                return max((owl.item_score(get_frame(i), c.extra["desk_box"], _persons(obs[i], 0.3)) for i in idxs), default=0.0)
++            c.f["owl_item"] = max(0.0, sc_(c.extra["gap_idx"]) - sc_(c.extra["pre_idx"]))
+     events: list[Event] = []
+     for c in cands:
+         for type_id, p in S.score(c, models.scorer):
+diff --git a/app/ml/scorer.py b/app/ml/scorer.py
+index bbbd576..6b1bbf4 100644
+--- a/app/ml/scorer.py
++++ b/app/ml/scorer.py
+@@ -20,6 +20,8 @@ STUMPS = {
+     "drink_clip": ("drink", "clip", "food_drink", {}),
+     "next_visit_desk": ("next_visit", "desk_change", "cash_left_on_desk", {}),
+     "safe_open": ("safe", "safe_change", "safe_left_open", {"dur": 3.0}),
++    # OWLv2 on the desk crop between two client visits: item (banknotes / card) appeared after the first client came
++    "next_visit_owl": ("next_visit", "owl_item", "cash_left_on_desk", {}),
+ }
+ 
+ # Opt-in experimental features are excluded from the default training set.
+diff --git a/docs/ml_model.md b/docs/ml_model.md
+index 519b76f..e17d21f 100644
+--- a/docs/ml_model.md
++++ b/docs/ml_model.md
+@@ -211,3 +211,10 @@ VLM/SFT на Mac в этом раунде не запускались; уско
+   но Х-38 0.23 ниже нормальных (0.27–0.32); стол после ухода и сейф — позитивы в середине распределения. Зона стола
+   слишком изменчива (стул, ноги, тени), банк нормы из одного видео мал. Код оставлен (`app/ml/anomaly.py`,
+   `scripts/probe_anomaly.py`), в модели не участвует.
++- **Детектор передач «из рук в руки» по плотной позе (8 кадр/с в окнах визита) — проверено, не внедрено**:
++  X-1 (деньги возвращены клиенту) ловится как поздняя передача кассир→клиент, но направление передачи на
++  наших ракурсах ненадёжно: ложные «кассир→клиент» в нормальных Х-5 (ручной пересчёт у края стола) и Х-19
++  (возврат документа). Эпизоды контакта запястий размазаны на секунды. Код: `scripts/probe_handover.py`.
++- **OWLv2 на кропах стола между визитами** (словарь: пачка купюр / удостоверение / паспорт; «бумажный документ» —
++  отвлекающий класс): Х-4 0.215, Х-38 0.28 против 0.0 у нормальных Х-5/Х-19/Х-39 → признак `owl_item`, стамп
++  `next_visit_owl` (опционально, `FORTE_USE_OWL=1`; ~60 с на окно на CPU).
+diff --git a/scripts/cashguard_analyzer.py b/scripts/cashguard_analyzer.py
+index 35be389..8fc0390 100644
+--- a/scripts/cashguard_analyzer.py
++++ b/scripts/cashguard_analyzer.py
+@@ -39,6 +39,8 @@ def main() -> int:
+         waited = max(0.0, T0 - os.path.getmtime(path))
+     except OSError:
+         waited = 0.0
++    if waited > jury_limit:  # not a fresh upload (CLI run on an old file) → full budget
++        waited = 0.0
+     budget = min(float(os.environ.get("ANALYZER_BUDGET_SEC", "240")), jury_limit - waited) - (time.time() - T0)
+     budget = max(budget, 25.0)  # always return something rather than nothing
+     print(f"queue wait {waited:.0f}s, budget {budget:.0f}s", file=sys.stderr)
+diff --git a/scripts/train_scorer.py b/scripts/train_scorer.py
+index 4ba213d..3111022 100644
+--- a/scripts/train_scorer.py
++++ b/scripts/train_scorer.py
+@@ -36,6 +36,12 @@ def collect():
+         vpath = os.path.join(ROOT, vdir, f"{name}.json")
+         if os.path.exists(vpath):
+             cands += M.to_candidates(sc, json.load(open(vpath)))
++        opath = os.path.join(ROOT, "data", "owl", f"{name}.json")
++        if os.path.exists(opath):
++            cache = {float(k): v for k, v in json.load(open(opath)).items()}
++            for c in cands:
++                if c.kind == "next_visit" and round(c.t, 1) in cache:
++                    c.f["owl_item"] = float(cache[round(c.t, 1)])
+         types = [t for _, t in lab["types"]] + EXTRA_TYPES.get(name, [])
+         for c in cands:
+             rows.append({"video": name, "kind": c.kind, "t": c.t, "f": dict(c.f), "vlabel": lab["label"],
+@@ -144,7 +150,7 @@ def main():
+     originals = [v for v in videos if "base" not in labels[v]]  # metrics on real videos only
+     print("CV:", "leave-one-video-out" if by_video else "leave-one-CABINET-out",
+           f"({len(set(GROUPS.values()))} groups, {len(videos)} videos, {len(originals)} originals)")
+-    EXPERIMENTAL = {"next_visit_desk", "safe_open"}  # new, weakly supported features: kept only if CV does not get worse
++    EXPERIMENTAL = {"next_visit_desk", "safe_open", "next_visit_owl"}  # new, weakly supported features: kept only if CV does not get worse
+     base = {k for k in S.STUMPS if not k.startswith("vlm_") and k not in EXPERIMENTAL and k not in S.ZONE_EXPERIMENTAL}
+     best = lovo_score(lovo_predict(rows, videos, base), labels, originals)
+     print("LOVO base (CV only): loss(2FN+FP)", -best[0], "FP", -best[1])
+diff --git a/src/backend/cmd/server/main.go b/src/backend/cmd/server/main.go
+index 01016bc..57dcff5 100644
+--- a/src/backend/cmd/server/main.go
++++ b/src/backend/cmd/server/main.go
+@@ -58,6 +58,21 @@ func main() {
+ 		addr = "127.0.0.1:8080"
+ 	}
+ 	router := transport.Router(s, key, uploads)
++	if static := os.Getenv("STATIC_DIR"); static != "" { // single-container deploy: React build served by Go
++		router.NoRoute(func(c *gin.Context) {
++			p := c.Request.URL.Path
++			if len(p) >= 4 && p[:4] == "/api" {
++				c.JSON(404, gin.H{"error": "not found"})
++				return
++			}
++			full := filepath.Join(static, filepath.Clean("/"+p))
++			if st, err := os.Stat(full); err == nil && !st.IsDir() {
++				c.File(full)
++				return
++			}
++			c.File(filepath.Join(static, "index.html"))
++		})
++	}
+ 	router.GET("/api/ready", func(c *gin.Context) {
+ 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+ 		defer cancel()
+diff --git a/src/backend/internal/transport/http.go b/src/backend/internal/transport/http.go
+index 127ed73..25b41e2 100644
+--- a/src/backend/internal/transport/http.go
++++ b/src/backend/internal/transport/http.go
+@@ -16,6 +16,17 @@ import (
+ 
+ var idPattern = regexp.MustCompile(`^[a-f0-9]{32}$`)
+ 
++// torView maps the internal job to the jury contract (ТЗ §10): statuses are only processing/done/failed.
++func torView(j domain.Job) domain.Job {
++	if j.Status == "queued" {
++		j.Status = "processing"
++	}
++	if j.Violations == nil {
++		j.Violations = []domain.Violation{}
++	}
++	return j
++}
++
+ func Router(s *usecase.Service, key, uploads string) *gin.Engine {
+ 	r := gin.New()
+ 	r.Use(gin.Logger(), gin.Recovery())
+@@ -60,16 +71,19 @@ func Router(s *usecase.Service, key, uploads string) *gin.Engine {
+ 		}
+ 		c.JSON(200, j)
+ 	})
+-	api.POST("/jobs", func(c *gin.Context) {
++	upload := func(c *gin.Context, tor bool) {
+ 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 501<<20)
+ 		if e := c.Request.ParseMultipartForm(8 << 20); e != nil {
+ 			c.JSON(400, gin.H{"error": "Некорректная загрузка или файл больше 500 МБ"})
+ 			return
+ 		}
+ 		defer c.Request.MultipartForm.RemoveAll()
+-		f, h, e := c.Request.FormFile("video")
++		f, h, e := c.Request.FormFile("file") // ТЗ §10: поле file
+ 		if e != nil {
+-			c.JSON(400, gin.H{"error": "Поле video обязательно"})
++			f, h, e = c.Request.FormFile("video") // интерфейс
++		}
++		if e != nil {
++			c.JSON(400, gin.H{"error": "Поле file (или video) обязательно"})
+ 			return
+ 		}
+ 		defer f.Close()
+@@ -117,7 +131,31 @@ func Router(s *usecase.Service, key, uploads string) *gin.Engine {
+ 			c.JSON(503, gin.H{"error": "Не удалось поставить видео в очередь"})
+ 			return
+ 		}
++		if tor {
++			c.JSON(200, gin.H{"job_id": j.ID, "status": "processing"})
++			return
++		}
+ 		c.JSON(202, j)
++	}
++	api.POST("/jobs", func(c *gin.Context) { upload(c, false) })
++	// ---- ТЗ §10: контракт для жюри
++	api.POST("/v1/analyze", func(c *gin.Context) { upload(c, true) })
++	api.GET("/v1/jobs/:id", func(c *gin.Context) {
++		id := c.Param("id")
++		if !idPattern.MatchString(id) {
++			c.JSON(404, gin.H{"error": "job not found"})
++			return
++		}
++		j, e := s.Repo.Get(id)
++		if errors.Is(e, domain.ErrNotFound) {
++			c.JSON(404, gin.H{"error": "job not found"})
++			return
++		}
++		if e != nil {
++			c.JSON(500, gin.H{"error": "read error"})
++			return
++		}
++		c.JSON(200, torView(j))
+ 	})
+ 	api.GET("/jobs/:id/video", func(c *gin.Context) {
+ 		id := c.Param("id")

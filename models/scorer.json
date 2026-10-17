@@ -56,6 +56,23 @@
    "n_neg": 2,
    "enabled": true
   },
+  "next_visit_owl": {
+   "thr": 0.10732194036245346,
+   "scale": 0.05366097018122673,
+   "separable": true,
+   "n_pos": 2,
+   "n_neg": 3,
+   "enabled": true
+  },
+  "safe_key_owl": {
+   "thr": 0.04740968719124794,
+   "scale": 0.002223636955022812,
+   "separable": true,
+   "n_pos": 1,
+   "n_neg": 12,
+   "calibration": "sparse-positive conservative floor",
+   "enabled": true
+  },
   "vlm_teller_drinks": {
    "thr": 0.9,
    "scale": 0.045000000000000005,

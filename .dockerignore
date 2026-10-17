@@ -1,0 +1,14 @@
+data/
+.venv/
+.venv-vlm/
+models/*.onnx
+models/rtmpose_m/
+models/vlm/
+design/
+docs/
+*.zip
+*.docx
+*.pdf
+.git/
+src/frontend/node_modules/
+src/backend/data/

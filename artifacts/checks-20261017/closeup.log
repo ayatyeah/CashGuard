@@ -1,0 +1,4 @@
+Loading weights:   0%|          | 0/625 [00:00<?, ?it/s]Loading weights: 100%|██████████| 625/625 [00:00<00:00, 11793.57it/s]
+X-1 {'times': [21.555412371134018, 23.560567010309278, 24.563144329896907], 'answer': {'cash_bundle_visible': False, 'cash_handed_to_customer': False, 'card_or_document_handover': False}, 'seconds': 23.959813525999834}
+Х-3 {'times': [15.551752921535893, 17.558430717863104, 18.561769616026712], 'answer': {'cash_bundle_visible': False, 'cash_handed_to_customer': False, 'card_or_document_handover': True}, 'seconds': 21.357407864999914}
+Х-5 {'times': [68.0951048951049, 70.0979020979021, 71.0993006993007], 'answer': {'cash_bundle_visible': False, 'cash_handed_to_customer': False, 'card_or_document_handover': True}, 'seconds': 19.700600471000143}
