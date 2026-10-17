@@ -40,9 +40,11 @@ class MLAnalyzer:
             except Exception as e:  # weights missing / backend unavailable → CV-only mode
                 print(f"VLM disabled: {e}", file=__import__("sys").stderr)
 
+    PERCEPTION_SHARE = 0.6   # share of the budget for perception; the rest: CLIP, VLM, evidence frames
+    VLM_MIN_LEFT = 90.0      # run the VLM only if at least this many seconds remain after perception
+
     def _fps(self, duration: float, budget_sec: float) -> tuple[float, str]:
-        # spend at most ~70% of the budget on perception
-        fps = 0.7 * budget_sec / max(duration * COST_PER_FRAME, 1e-3)
+        fps = self.PERCEPTION_SHARE * budget_sec / max(duration * COST_PER_FRAME, 1e-3)
         if fps >= 2.0:
             return 2.0, "full"
         return max(0.5, fps), "cheap"
@@ -60,18 +62,50 @@ class MLAnalyzer:
         deadline = t0 + 0.8 * budget_sec
         last_t = 0.0
         truncated = False
-        for fid, t, img in iter_frames(video_path, fps):
-            if W is None:
-                H, W = img.shape[:2]
-            o = self.perception.frame(fid, t, img, state)
-            obs.append(o)
-            frames.append(cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
-            wa_crops.append(cv2.resize(crop(img, o.extra.get("work_area")), (224, 224)))
-            last_t = t
-            if time.time() > deadline:
-                warnings.append(f"анализ остановлен по времени на {t:.0f} с из {duration:.0f} с")
-                truncated = True
+        # adaptive sampling: after a few frames re-estimate the real per-frame cost on this machine and
+        # thin the sampling so that perception finishes within its share of the budget
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise RuntimeError("видео не декодируется")
+        src_fps = vm["fps"]
+        step = max(1, int(round(src_fps / fps)))
+        i = 0
+        t_perc_start = time.time()
+        while True:
+            if not cap.grab():
                 break
+            if i % step == 0:
+                ok, img = cap.retrieve()
+                if ok:
+                    h0, w0 = img.shape[:2]
+                    s = 960 / max(h0, w0)
+                    if s < 1:
+                        img = cv2.resize(img, (int(w0 * s), int(h0 * s)), interpolation=cv2.INTER_AREA)
+                    if W is None:
+                        H, W = img.shape[:2]
+                    t = i / src_fps
+                    o = self.perception.frame(i, t, img, state)
+                    obs.append(o)
+                    frames.append(cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+                    wa_crops.append(cv2.resize(crop(img, o.extra.get("work_area")), (224, 224)))
+                    last_t = t
+                    if len(obs) == 8:
+                        per = (time.time() - t_perc_start) / 8
+                        remaining = max(0.0, duration - t)
+                        allowed = self.PERCEPTION_SHARE * budget_sec - (time.time() - t0)
+                        need = remaining * (src_fps / step) * per
+                        if need > allowed and allowed > 0:
+                            new_step = int(np.ceil(step * need / allowed))
+                            if new_step > step:
+                                step = min(new_step, int(src_fps * 2))  # never below 0.5 fps
+                                mode = "cheap"
+                                warnings.append(f"мало времени: частота кадров снижена до {src_fps / step:.1f}/с")
+                    if time.time() > deadline:
+                        warnings.append(f"анализ остановлен по времени на {t:.0f} с из {duration:.0f} с")
+                        truncated = True
+                        break
+            i += 1
+        cap.release()
         t_perc = time.time() - t0
         if not obs:
             raise RuntimeError("видео не декодируется")
@@ -91,6 +125,8 @@ class MLAnalyzer:
             return img if img.shape[:2] == (H, W) else cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA)
 
         vlm_budget = max(0.0, budget_sec - (time.time() - t0) - 20.0)
+        if vlm_budget < self.VLM_MIN_LEFT:
+            vlm_budget = 0.0  # not enough time for the VLM → CV-only result (never a timeout)
         events, info = pipeline.run(obs, frames, W, H, self.models, clip=self.clip, clip_wa=clip_wa,
                                     vlm=self.vlm, get_frame=get_frame, vlm_budget=vlm_budget,
                                     truncated=truncated)
@@ -107,6 +143,7 @@ class MLAnalyzer:
             warnings.append("рабочее место кассира не найдено — вывод ненадёжен")
         return AnalysisResult(detections=dets, covered=[(0.0, float(last_t))], warnings=warnings,
                               timings={"perception": round(t_perc, 2), "clip": round(t_clip, 2),
+                                       "budget": round(budget_sec, 1), "step": step,
                                        "vlm_moments": info.get("vlm_moments", 0),
                                        "total": round(time.time() - t0, 2), "frames": len(obs), "fps": fps},
                               mode=mode)

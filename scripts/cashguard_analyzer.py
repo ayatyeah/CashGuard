@@ -32,7 +32,16 @@ def main() -> int:
 
     an = MLAnalyzer()
     meta = video_meta(path)
-    budget = float(os.environ.get("ANALYZER_BUDGET_SEC", "240")) - (time.time() - T0)  # model loading counts too
+    # The jury counts 5 minutes from the upload. The backend only passes the file path, but the upload's
+    # mtime is the moment it landed on disk — so the time spent waiting in the queue is subtracted here.
+    jury_limit = float(os.environ.get("ANALYZER_JURY_LIMIT_SEC", "270"))
+    try:
+        waited = max(0.0, T0 - os.path.getmtime(path))
+    except OSError:
+        waited = 0.0
+    budget = min(float(os.environ.get("ANALYZER_BUDGET_SEC", "240")), jury_limit - waited) - (time.time() - T0)
+    budget = max(budget, 25.0)  # always return something rather than nothing
+    print(f"queue wait {waited:.0f}s, budget {budget:.0f}s", file=sys.stderr)
     res = an.analyze(path, meta, budget)
     fps = meta["fps"]
     violations = []
