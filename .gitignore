@@ -1,0 +1,19 @@
+# dataset & case materials — hackathon use only, never commit
+data/
+*.mov
+*.mp4
+*.zip
+*.docx
+*.xlsx
+# env / caches / runtime
+.venv/
+__pycache__/
+*.pyc
+models/
+runs/
+jobs/
+*.onnx
+*.pt
+*.pth
+.env
+scratch_frames/
