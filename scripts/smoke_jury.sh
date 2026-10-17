@@ -24,9 +24,9 @@ except Exception: print("transient")')
     [ -n "$r" ] && printf '%s' "$r" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null && break
     sleep 3; r=$(curl -sS -m 30 "$BASE/api/v1/jobs/$job" -H "X-API-Key: $KEY" || true)
   done
-  printf '%s' "$r" | python3 - "$dt" <<'PY'
-import json, sys, base64
-r = json.load(sys.stdin); dt = int(sys.argv[1])
+  RESP="$r" python3 - "$dt" <<'PY'
+import json, sys, base64, os
+r = json.loads(os.environ["RESP"]); dt = int(sys.argv[1])
 assert r["status"] in ("done", "failed"), r["status"]
 assert r.get("verdict") in ("violation", "no_violation") or r["status"] == "failed", r.get("verdict")
 vs = r.get("violations") or []
