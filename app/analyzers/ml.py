@@ -18,7 +18,8 @@ from app.ml import pipeline
 from app.ml.perception import Perception, iter_frames, video_meta
 from app.ml.semantic import ClipEmbedder, crop
 
-# seconds of CPU per sampled frame (perception + CLIP); measured on a Ryzen 5 5600H (6 cores, CPU only), Apple M3 is faster
+# seconds of CPU per sampled frame (perception + CLIP); measured on a Ryzen 5 5600H (6 cores, CPU only).
+# In Docker on Apple M3 8 GB it is ~1.1 s, so src/backend/Dockerfile.ml sets FORTE_COST_PER_FRAME=1.2.
 COST_PER_FRAME = float(os.environ.get("FORTE_COST_PER_FRAME", "0.6"))
 
 
