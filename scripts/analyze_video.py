@@ -18,14 +18,26 @@ from app.ml.perception import video_meta  # noqa: E402
 from app.ml import pipeline  # noqa: E402
 
 
-def frame_b64(path: str, frame_id: int) -> str:
+def frame_b64(path: str, frame_id: int, max_side: int = 1280) -> str:
+    """JPEG (base64) of a frame; seeking near the end of some files fails, so step back a few frames."""
     cap = cv2.VideoCapture(path)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
-    ok, img = cap.read()
+    img = None
+    for f in (frame_id, frame_id - 1, frame_id - 2, frame_id - 3, frame_id - 6, frame_id - 12):
+        if f < 0:
+            break
+        cap.set(cv2.CAP_PROP_POS_FRAMES, f)
+        ok, im = cap.read()
+        if ok and im is not None:
+            img = im
+            break
     cap.release()
-    if not ok:
+    if img is None:
         return ""
-    return base64.b64encode(cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 85])[1]).decode()
+    s = max_side / max(img.shape[:2])
+    if s < 1:  # keep the stdout JSON small (Go backend limit 32 MB)
+        img = cv2.resize(img, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
+    ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    return base64.b64encode(buf).decode() if ok else ""
 
 
 def to_api(path: str, res, norms: dict, fps: float) -> dict:

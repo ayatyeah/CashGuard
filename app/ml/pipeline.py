@@ -28,6 +28,11 @@ class Event:
     f: dict
 
 
+def uses_vlm(models) -> bool:
+    return any(k.startswith("vlm_") and st.get("enabled", True)
+               for k, st in (models.scorer or {}).get("stumps", {}).items())
+
+
 class Models:
     def __init__(self):
         self.track = load_json_model("track_model.json")
@@ -35,11 +40,25 @@ class Models:
         self.norms = yaml.safe_load(open(NORMS_PATH)) if os.path.exists(NORMS_PATH) else {}
 
 
-def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None = None) -> tuple[list[Event], dict]:
-    """obs: FrameObs list; frames: aligned BGR frames (any scale); clip: ClipEmbedder (optional)."""
+def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None = None,
+        vlm=None, get_frame=None, vlm_budget: float | None = None, vlm_moments: list | None = None,
+        truncated: bool = False) -> tuple[list[Event], dict]:
+    """obs: FrameObs list; frames: aligned BGR frames (any scale); clip: ClipEmbedder (optional);
+    vlm + get_frame(obs_index → full-res BGR): optional VLM verification of key moments (within vlm_budget s);
+    vlm_moments: precomputed answered moments (offline evaluation)."""
+    from . import moments as M
     scene = analyze_scene(obs, W, H, track_model=models.track)
     probes = probe_scores(clip_wa, clip.probe_bank()) if (clip is not None and clip_wa is not None and len(clip_wa)) else {}
     cands = generate(scene, frames, probes)
+    if truncated:  # "never came back" cannot be established on a cut video
+        cands = [c for c in cands if c.kind != "leave"]
+    moms = vlm_moments
+    if moms is None and vlm is not None and get_frame is not None and uses_vlm(models) and \
+            (vlm_budget is None or vlm_budget > 30):
+        moms = M.propose(scene, frames, [c for c in cands if c.kind == "leave"])
+        M.ask_all(vlm, moms, get_frame, budget_sec=vlm_budget)
+    if moms:
+        cands += M.to_candidates(scene, moms)
     events: list[Event] = []
     for c in cands:
         for type_id, p in S.score(c, models.scorer):
@@ -53,11 +72,18 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
         kept.append(e)
     kept.sort(key=lambda e: e.t)
     info = {"n_candidates": len(cands), "cashier_found": scene.seat is not None,
+            "vlm_moments": len(moms or []), "vlm_skipped": sum(1 for m in (moms or []) if m.get("skipped")),
             "candidates": [(c.kind, round(c.t, 1), {k: round(float(v), 3) for k, v in c.f.items()}) for c in cands]}
     return kept, info
 
 
 TEMPLATES = {
+    "personal_items": "Около {t:.0f} с на кассовом столе видны личные вещи (сумка/верхняя одежда) рядом с "
+                      "кассовым оборудованием (подтверждено визуальной языковой моделью).",
+    "collection_bag_no_check": "Около {t:.0f} с посетитель передаёт кассиру сумку (по виду — инкассаторскую); "
+                               "осмотра целостности и пломбы сумки не видно.",
+    "cash_not_counted": "Около {t:.0f} с на столе кассира видны пачки наличных, сложенные вместе, без пересчёта "
+                        "на счётной машинке.",
     "left_cash_unattended": "Около {t:.0f} с кассир встаёт и уходит с рабочего места, не вернувшись до конца записи. "
                             "После ухода на столе кассира остаются предметы (по виду — наличные/ценности/документы); "
                             "перед уходом они не убраны в запираемое хранилище.",
@@ -73,7 +99,6 @@ TEMPLATES = {
     "food_drink": "Около {t:.0f} с у кассира на рабочем месте напиток/ёмкость с едой рядом с наличными; кассир подносит "
                   "его к лицу.",
     "phone_use": "Около {t:.0f} с в руках кассира виден мобильный телефон (около {persist:.0f} с).",
-    "personal_items": "Около {t:.0f} с на кассовом столе находятся личные вещи (сумка/одежда).",
 }
 
 

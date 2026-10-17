@@ -68,7 +68,7 @@ class YoloxDetector:
         scores = out[:, 4:5] * out[:, 5:]
         cls = scores.argmax(1)
         sc = scores[np.arange(len(cls)), cls]
-        m = (sc >= conf) & np.isin(cls, KEEP_IDS)
+        m = (sc >= conf) & np.isin(cls, KEEP_IDS) & np.isfinite(out[:, :4]).all(1)
         if not m.any():
             return np.zeros((0, 4), np.float32), np.zeros(0, np.float32), np.zeros(0, np.int64)
         xy, wh, sc, cls = xy[m], wh[m], sc[m], cls[m]
@@ -119,12 +119,20 @@ def find_model(*names: str) -> str:
     raise FileNotFoundError(f"model not found in {MODELS_DIR}: {names}")
 
 
+def sane_fps(f) -> float:
+    try:
+        f = float(f)
+    except Exception:
+        return 30.0
+    return f if 1.0 <= f <= 240.0 else 30.0
+
+
 def iter_frames(path: str, fps: float, max_side: int = 960):
     """Yield (frame_id, t, bgr) sampled at ~fps. Decodes sequentially (grab) to keep exact frame indices."""
     cap = cv2.VideoCapture(path)
     if not cap.isOpened():
         raise RuntimeError(f"cannot open video {path}")
-    src_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    src_fps = sane_fps(cap.get(cv2.CAP_PROP_FPS))
     step = max(1, int(round(src_fps / fps)))
     i = 0
     while True:
@@ -145,7 +153,7 @@ def iter_frames(path: str, fps: float, max_side: int = 960):
 
 def video_meta(path: str) -> dict:
     cap = cv2.VideoCapture(path)
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    fps = sane_fps(cap.get(cv2.CAP_PROP_FPS))
     n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     w, h = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()

@@ -8,6 +8,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
+
+T0 = time.time()
 
 # keep stdout clean: everything printed by libraries (incl. C extensions) goes to stderr
 _REAL_STDOUT = os.dup(1)
@@ -29,9 +32,9 @@ def main() -> int:
 
     an = MLAnalyzer()
     meta = video_meta(path)
-    budget = float(os.environ.get("ANALYZER_BUDGET_SEC", "240"))
+    budget = float(os.environ.get("ANALYZER_BUDGET_SEC", "240")) - (time.time() - T0)  # model loading counts too
     res = an.analyze(path, meta, budget)
-    fps = meta["fps"] or 30.0
+    fps = meta["fps"]
     violations = []
     for d in res.detections:
         frames = [{"timestamp_sec": round(f / fps, 1), "image_base64": frame_b64(path, f)}
@@ -47,7 +50,8 @@ def main() -> int:
         violations.append(v)
     out = {"status": "done", "verdict": "violation" if violations else "no_violation", "violations": violations}
     print(f"timings={res.timings} warnings={res.warnings}", file=sys.stderr)
-    os.write(_REAL_STDOUT, json.dumps(out, ensure_ascii=False).encode())
+    with os.fdopen(_REAL_STDOUT, "wb") as f:  # buffered writer: no partial writes
+        f.write(json.dumps(out, ensure_ascii=False, allow_nan=False).encode())
     return 0
 
 

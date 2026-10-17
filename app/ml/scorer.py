@@ -17,6 +17,15 @@ STUMPS = {
     "drink_clip": ("drink", "clip", "food_drink", {}),
 }
 
+# VLM answers (app/ml/moments.py): "vlm_<key>" candidates, feature "count" = number of "yes" answers
+for _k, _t in {
+    "teller_holds_phone": "phone_use", "teller_drinks": "food_drink", "cup_or_food_on_desk": "food_drink",
+    "handbag_or_coat_on_desk": "personal_items", "client_gives_bag": "collection_bag_no_check",
+    "cash_stacks_mixed_on_desk": "cash_not_counted", "cash_left_on_desk": "left_cash_unattended",
+    "documents_or_notebook_left": "left_cash_unattended", "bag_left_on_desk": "left_cash_unattended",
+}.items():
+    STUMPS[f"vlm_{_k}"] = (f"vlm_{_k}", "count", _t, {})
+
 # kinds / patterns without positive training examples → conservative rules (p in 0..1)
 RULES = {
     "crowd_n": ("crowd", "unauthorized_person",
@@ -38,6 +47,8 @@ def score(cand, model: dict) -> list[tuple[str, float]]:
     for name, (kind, feat, type_id, gates) in STUMPS.items():
         st = model.get("stumps", {}).get(name)
         if kind != cand.kind or st is None or feat not in cand.f or not _gate_ok(cand.f, gates):
+            continue
+        if not st.get("enabled", True):
             continue
         p = 1.0 / (1.0 + np.exp(-(cand.f[feat] - st["thr"]) / st["scale"]))
         if p >= 0.5:

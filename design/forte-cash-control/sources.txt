@@ -1,0 +1,6 @@
+Design concept for the cash-operation video review service.
+Forte F symbol and wordmark paths: https://forte.kz/ru (retrieved 2026-10-17).
+Color #A31551 extracted from the official header SVG.
+Shield: custom geometry based on the supplied CashGuard concept.
+Descriptor: Inter Display Medium, converted to paths.
+This is a proposed service lockup, not an approved bank brand guideline.

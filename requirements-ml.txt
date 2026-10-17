@@ -9,3 +9,4 @@ pyyaml
 pillow
 torch
 transformers
+torchvision

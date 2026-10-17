@@ -5,35 +5,96 @@
    "scale": 0.06605204939842224,
    "separable": true,
    "n_pos": 2,
-   "n_neg": 6
+   "n_neg": 6,
+   "enabled": true
   },
   "leave_items": {
    "thr": 0.551153688466767,
    "scale": 0.09632398221289747,
    "separable": true,
    "n_pos": 3,
-   "n_neg": 5
+   "n_neg": 5,
+   "enabled": true
   },
   "entry_door": {
    "thr": 0.13364863073868546,
    "scale": 0.010874610143995721,
    "separable": true,
    "n_pos": 3,
-   "n_neg": 7
+   "n_neg": 7,
+   "enabled": true
   },
   "crowd_standing": {
    "thr": 0.657967032967033,
    "scale": 0.13255494505494508,
    "separable": true,
    "n_pos": 4,
-   "n_neg": 6
+   "n_neg": 6,
+   "enabled": true
   },
   "drink_clip": {
    "thr": 0.5650919377803802,
    "scale": 0.19773830473423004,
    "separable": true,
    "n_pos": 2,
-   "n_neg": 10
+   "n_neg": 10,
+   "enabled": true
+  },
+  "vlm_teller_drinks": {
+   "thr": 0.9,
+   "scale": 0.045000000000000005,
+   "separable": true,
+   "n_pos": 1,
+   "n_neg": 0,
+   "enabled": true
+  },
+  "vlm_cup_or_food_on_desk": {
+   "thr": 1.0,
+   "scale": 2.5e-07,
+   "separable": false,
+   "n_pos": 1,
+   "n_neg": 1,
+   "enabled": false
+  },
+  "vlm_handbag_or_coat_on_desk": {
+   "thr": 1.8,
+   "scale": 0.09000000000000001,
+   "separable": true,
+   "n_pos": 1,
+   "n_neg": 0,
+   "enabled": true
+  },
+  "vlm_client_gives_bag": {
+   "thr": 0.9,
+   "scale": 0.045000000000000005,
+   "separable": true,
+   "n_pos": 1,
+   "n_neg": 0,
+   "enabled": true
+  },
+  "vlm_cash_left_on_desk": {
+   "thr": 1.0,
+   "scale": 2.5e-07,
+   "separable": false,
+   "n_pos": 3,
+   "n_neg": 3,
+   "enabled": false
+  },
+  "vlm_documents_or_notebook_left": {
+   "thr": 1.0,
+   "scale": 2.5e-07,
+   "separable": false,
+   "n_pos": 2,
+   "n_neg": 3,
+   "enabled": false
+  },
+  "vlm_bag_left_on_desk": {
+   "thr": 1.0,
+   "scale": 2.5e-07,
+   "separable": false,
+   "n_pos": 2,
+   "n_neg": 3,
+   "enabled": false
   }
  }
 }

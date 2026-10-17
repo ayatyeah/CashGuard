@@ -15,6 +15,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
 from common import ROOT, candidates_for, load_labels  # noqa: E402
+from app.ml import moments as M  # noqa: E402
 from app.ml import scorer as S  # noqa: E402
 
 # true events visible in train videos besides the organisers' timestamp (docs/train_timelines.md)
@@ -30,7 +31,10 @@ def collect():
     for name, lab in sorted(labels.items()):
         if lab["split"] != "train":
             continue
-        _, _, cands = candidates_for(name, bank)
+        _, sc, cands = candidates_for(name, bank)
+        vpath = os.path.join(ROOT, "data", "vlm", f"{name}.json")
+        if os.path.exists(vpath):
+            cands += M.to_candidates(sc, json.load(open(vpath)))
         types = [t for _, t in lab["types"]] + EXTRA_TYPES.get(name, [])
         for c in cands:
             rows.append({"video": name, "kind": c.kind, "t": c.t, "f": dict(c.f), "vlabel": lab["label"],
@@ -38,7 +42,7 @@ def collect():
     return rows, labels
 
 
-def train(rows):
+def train(rows, enabled=None):
     model = {"stumps": {}}
     for name, (kind, feat, type_id, gates) in S.STUMPS.items():
         pos, neg = [], []
@@ -46,7 +50,8 @@ def train(rows):
             if r["kind"] != kind or feat not in r["f"] or not S._gate_ok(r["f"], gates):
                 continue
             if type_id in r["types"]:
-                near = any(abs(r["t"] - t) <= 8.0 for t in r["ts"]) or type_id in EXTRA_TYPES.get(r["video"], [])
+                near = (kind.startswith("vlm_") or any(abs(r["t"] - t) <= 8.0 for t in r["ts"])
+                        or type_id in EXTRA_TYPES.get(r["video"], []))
                 if near:
                     pos.append(r["f"][feat])
             elif r["vlabel"] == 0 or (kind == "leave" and r["types"]):
@@ -54,6 +59,7 @@ def train(rows):
                 neg.append(r["f"][feat])
         st = S.fit_stump(pos, neg)
         if st:
+            st["enabled"] = enabled is None or name in enabled
             model["stumps"][name] = st
     return model
 
@@ -96,15 +102,42 @@ def report(pred, labels, videos, title):
     return (tp + tn) / n
 
 
+def lovo_predict(rows, videos, enabled):
+    out = {}
+    for v in videos:
+        m = train([r for r in rows if r["video"] != v], enabled)
+        out.update({k: e for k, e in predict([r for r in rows if r["video"] == v], m).items()})
+    return out
+
+
+def lovo_score(pred, labels, videos):
+    err = fp = 0
+    for v in videos:
+        y = int(bool(pred.get(v)))
+        err += y != labels[v]["label"]
+        fp += y and not labels[v]["label"]
+    return -err, -fp
+
+
 def main():
     rows, labels = collect()
     videos = sorted(n for n, l in labels.items() if l["split"] == "train")
-    lovo = {}
-    for v in videos:
-        m = train([r for r in rows if r["video"] != v])
-        lovo.update({k: e for k, e in predict([r for r in rows if r["video"] == v], m).items()})
+    base = {k for k in S.STUMPS if not k.startswith("vlm_")}
+    best = lovo_score(lovo_predict(rows, videos, base), labels, videos)
+    print("LOVO base (CV only): errors", -best[0], "FP", -best[1])
+    # greedy forward selection of VLM features by LOVO (keep only if it does not hurt)
+    enabled = set(base)
+    for k in [k for k in S.STUMPS if k.startswith("vlm_")]:
+        sc = lovo_score(lovo_predict(rows, videos, enabled | {k}), labels, videos)
+        # keep if it does not hurt LOVO: single-example types cannot show a LOVO gain, but extra false
+        # positives on the normal videos would show up here
+        print(f"  + {k:34s} errors {-sc[0]:2d} FP {-sc[1]}", "KEEP" if sc >= best else "")
+        if sc >= best:
+            best, enabled = sc, enabled | {k}
+    print("enabled:", sorted(enabled))
+    lovo = lovo_predict(rows, videos, enabled)
     report(lovo, labels, videos, "LOVO (each video scored by a model trained without it):")
-    model = train(rows)
+    model = train(rows, enabled)
     report(predict(rows, model), labels, videos, "Final model on train (resubstitution):")
     os.makedirs(os.path.join(ROOT, "models"), exist_ok=True)
     json.dump(model, open(os.path.join(ROOT, "models", "scorer.json"), "w"), indent=1)

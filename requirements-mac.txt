@@ -1,0 +1,33 @@
+# ML-часть анализатора для macOS arm64 (Apple Silicon, Mac M3 8 ГБ). Python 3.11, macOS >= 14 (Sonoma).
+# Установка из корня репозитория (подробно — docs/deploy_mac.md):
+#   uv venv --python 3.11 .venv
+#   uv pip install --python .venv/bin/python -r requirements-mac.txt
+# torch ставится с обычного PyPI (колесо macOS arm64 = CPU + MPS); --extra-index-url .../whl/cpu на Mac НЕ нужен.
+# Версии закреплены по проверенному Linux-окружению проекта + стек MLX (у всех пакетов есть колёса cp311 macOS arm64).
+
+# --- то же, что requirements-ml.txt ---
+numpy==2.4.6
+opencv-python-headless==5.0.0.93
+# Модуль cv2 дают три пакета: rtmlib тянет opencv-python и opencv-contrib-python, mlx-vlm — opencv-python.
+# Держим одну версию у всех трёх, чтобы в site-packages не смешались бинарники разных сборок OpenCV.
+opencv-python==5.0.0.93
+opencv-contrib-python==5.0.0.93
+# колесо macOS arm64 содержит CPUExecutionProvider и CoreMLExecutionProvider; код использует только CPU EP
+onnxruntime==1.31.0
+rtmlib==0.0.16
+scipy==1.17.1
+# scikit-learn нужен только скриптам обучения (scripts/train_*.py), анализатору — нет
+scikit-learn==1.9.1
+pyyaml==6.0.3
+pillow==13.0.0
+torch==2.14.1
+torchvision==0.29.1
+transformers==5.20.1
+tokenizers==0.23.3
+huggingface_hub==2.2.0
+safetensors==0.8.0
+
+# --- VLM на Apple Silicon: FORTE_VLM_BACKEND=mlx, модель mlx-community/Qwen3-VL-2B-Instruct-4bit ---
+# mlx-vlm 0.7.8 требует mlx>=0.32.3 и transformers>=5.14.0; маркеры не дают поставить MLX на Linux/Intel.
+mlx-vlm==0.7.8 ; sys_platform == "darwin" and platform_machine == "arm64"
+mlx==0.32.4 ; sys_platform == "darwin" and platform_machine == "arm64"

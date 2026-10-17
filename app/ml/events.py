@@ -65,10 +65,19 @@ def build_tracks(obs: list[FrameObs], W: int, H: int, min_score: float = 0.35) -
         pidx = np.where(o.classes == 0)[0]
         keep = o.scores[pidx] > min_score
         sel = pidx[keep]
+        sel_kp = np.where(keep)[0]
+        dup = np.zeros(len(sel), bool)
+        for a in range(len(sel)):
+            for b in range(len(sel)):
+                if a != b and o.scores[sel[b]] > o.scores[sel[a]]:
+                    A, B = o.boxes[sel[a]], o.boxes[sel[b]]
+                    iw = max(0.0, min(A[2], B[2]) - max(A[0], B[0])); ih = max(0.0, min(A[3], B[3]) - max(A[1], B[1]))
+                    if iw * ih > 0.85 * (A[2] - A[0]) * (A[3] - A[1]):
+                        dup[a] = True
+        sel, sel_kp = sel[~dup], sel_kp[~dup]
         ids = tr.step(i, o.boxes[sel], o.scores[sel], diag)
         # kpts are stored in the order of person detections
-        kp_rows = np.where(keep)[0]
-        per_frame.append((sel, kp_rows, ids))
+        per_frame.append((sel, sel_kp, ids))
     tracks = []
     for t in tr.finish():
         if len(t.obs) < 2:

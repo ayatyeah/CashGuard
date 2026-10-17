@@ -26,8 +26,19 @@ class MLAnalyzer:
     def __init__(self, threads: int | None = None):
         threads = threads or max(2, (os.cpu_count() or 4) - 2)
         self.perception = Perception(threads=threads)
-        self.clip = ClipEmbedder(threads=threads)
+        try:
+            self.clip = ClipEmbedder(threads=threads)
+        except Exception as e:  # CLIP weights missing → analysis without the CLIP probes
+            print(f"CLIP disabled: {e}", file=__import__("sys").stderr)
+            self.clip = None
         self.models = pipeline.Models()
+        self.vlm = None
+        if os.environ.get("FORTE_USE_VLM", "1") == "1" and pipeline.uses_vlm(self.models):
+            try:
+                from app.ml.vlm import VLM
+                self.vlm = VLM(threads=threads)
+            except Exception as e:  # weights missing / backend unavailable → CV-only mode
+                print(f"VLM disabled: {e}", file=__import__("sys").stderr)
 
     def _fps(self, duration: float, budget_sec: float) -> tuple[float, str]:
         # spend at most ~70% of the budget on perception
@@ -48,23 +59,43 @@ class MLAnalyzer:
         W = H = None
         deadline = t0 + 0.8 * budget_sec
         last_t = 0.0
+        truncated = False
         for fid, t, img in iter_frames(video_path, fps):
             if W is None:
                 H, W = img.shape[:2]
             o = self.perception.frame(fid, t, img, state)
             obs.append(o)
             frames.append(cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
-            wa_crops.append(crop(img, o.extra.get("work_area")))
+            wa_crops.append(cv2.resize(crop(img, o.extra.get("work_area")), (224, 224)))
             last_t = t
             if time.time() > deadline:
                 warnings.append(f"анализ остановлен по времени на {t:.0f} с из {duration:.0f} с")
+                truncated = True
                 break
         t_perc = time.time() - t0
         if not obs:
             raise RuntimeError("видео не декодируется")
-        clip_wa = np.concatenate([self.clip.images(wa_crops[i:i + 32]) for i in range(0, len(wa_crops), 32)])
+        clip_wa = (np.concatenate([self.clip.images(wa_crops[i:i + 32]) for i in range(0, len(wa_crops), 32)])
+                   if self.clip is not None else None)
         t_clip = time.time() - t0 - t_perc
-        events, info = pipeline.run(obs, frames, W, H, self.models, clip=self.clip, clip_wa=clip_wa)
+        fid = [o.frame_id for o in obs]
+
+        def get_frame(i):
+            cap = cv2.VideoCapture(video_path)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, fid[i])
+            ok, img = cap.read()
+            cap.release()
+            if not ok or img is None:
+                return cv2.resize(frames[i], (W, H))
+            # crops are in perception coordinates (frames may have been downscaled to max_side=960)
+            return img if img.shape[:2] == (H, W) else cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA)
+
+        vlm_budget = max(0.0, budget_sec - (time.time() - t0) - 20.0)
+        events, info = pipeline.run(obs, frames, W, H, self.models, clip=self.clip, clip_wa=clip_wa,
+                                    vlm=self.vlm, get_frame=get_frame, vlm_budget=vlm_budget,
+                                    truncated=truncated)
+        if info.get("vlm_skipped"):
+            warnings.append(f"VLM: пропущено {info['vlm_skipped']} из {info['vlm_moments']} моментов (нет времени)")
 
         dets = []
         for e in events:
@@ -76,5 +107,6 @@ class MLAnalyzer:
             warnings.append("рабочее место кассира не найдено — вывод ненадёжен")
         return AnalysisResult(detections=dets, covered=[(0.0, float(last_t))], warnings=warnings,
                               timings={"perception": round(t_perc, 2), "clip": round(t_clip, 2),
+                                       "vlm_moments": info.get("vlm_moments", 0),
                                        "total": round(time.time() - t0, 2), "frames": len(obs), "fps": fps},
                               mode=mode)
