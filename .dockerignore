@@ -1,4 +1,4 @@
-# Build context for src/backend/Dockerfile.ml: only what the image needs.
+# Build context for the root Dockerfile (UI + Go + ML) and src/backend/Dockerfile.ml: only what the images need.
 *
 !app/
 !scripts/
@@ -6,13 +6,9 @@
 !models/*.json
 !requirements-ml.txt
 !src/backend/
+!src/frontend/
+src/frontend/node_modules/
+src/frontend/dist/
 src/backend/data/
 **/__pycache__/
 **/*.pyc
-design/
-docs/
-artifacts/
-*.pdf
-*.docx
-*.zip
-src/frontend/node_modules/
