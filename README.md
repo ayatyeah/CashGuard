@@ -16,6 +16,12 @@ bash scripts/download_models.sh                       # веса (Apache-2.0/MIT
 ```
 В сервисе: `ANALYZER=ml` → `from app.analyzers.ml import MLAnalyzer` (интерфейс STACK.md §4).
 
+**Подключение к Go-бэкенду CashGuard:** `DEMO_MODE=false`, `ANALYZER_COMMAND=<abs path>/bin/cashguard-analyzer`.
+Лаунчер принимает путь к видео, пишет в stdout только JSON по контракту (`status`, `verdict`, `violations[]` с
+`evidence_frames` в JPEG base64 и `rule = {title, section, url}`), логи — в stderr. Работает офлайн
+(`HF_HUB_OFFLINE=1`), бюджет времени — `ANALYZER_BUDGET_SEC` (по умолчанию 240). Python берётся из `.venv`
+или из `CASHGUARD_PYTHON`.
+
 ## Данные
 Датасет **не хранится в репозитории** (условия хакатона: данные только для использования в рамках хакатона).
 Распакуйте `open.zip` и разложите по `configs/split.json`:

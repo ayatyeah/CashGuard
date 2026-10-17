@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# ANALYZER_COMMAND for the Go backend: bin/cashguard-analyzer <absolute-video-path>  → JSON on stdout
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PY="${CASHGUARD_PYTHON:-$DIR/.venv/bin/python}"
+exec "$PY" "$DIR/scripts/cashguard_analyzer.py" "$@"

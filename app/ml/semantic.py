@@ -28,6 +28,9 @@ PROBES = {
 
 class ClipEmbedder:
     def __init__(self, threads: int = 6):
+        # weights come from the local cache only — no network access while processing videos (ТЗ §7)
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
         import torch
         from transformers import CLIPModel, CLIPProcessor
         torch.set_num_threads(threads)
