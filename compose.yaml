@@ -26,6 +26,8 @@ services:
       API_KEY: ${API_KEY:?Set API_KEY in .env}
       DEMO_MODE: ${DEMO_MODE:-false}
       JOB_DEADLINE_SEC: ${JOB_DEADLINE_SEC:-285}
+      # seconds of CPU per analysed frame; 1.2 measured on Apple M3 8 GB, lower it on a faster PC
+      FORTE_COST_PER_FRAME: ${FORTE_COST_PER_FRAME:-1.2}
       DATA_DIR: /data
       ADDR: 0.0.0.0:8080
     volumes:
