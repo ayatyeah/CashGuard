@@ -23,7 +23,7 @@ ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=
     HF_HOME=/opt/hf OMP_NUM_THREADS=6 FORTE_USE_VLM=0 FORTE_USE_OWL=1 FORTE_MODELS_DIR=/app/models \
     ADDR=0.0.0.0:8080 DATA_DIR=/data STATIC_DIR=/app/static GIN_MODE=release \
     DEMO_MODE=false ANALYZER_COMMAND=/app/bin/cashguard-analyzer CASHGUARD_PYTHON=/usr/local/bin/python \
-    ANALYZER_JURY_LIMIT_SEC=255
+    ANALYZER_JURY_LIMIT_SEC=255 FORTE_COST_PER_FRAME=1.2 FORTE_THREADS=4
 RUN apt-get update && apt-get install -y --no-install-recommends curl unzip libgl1 libglib2.0-0 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
