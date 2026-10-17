@@ -24,7 +24,8 @@ COST_PER_FRAME = float(os.environ.get("FORTE_COST_PER_FRAME", "0.6"))
 
 class MLAnalyzer:
     def __init__(self, threads: int | None = None):
-        threads = threads or max(2, (os.cpu_count() or 4) - 2)
+        # in containers os.cpu_count() is the host's core count, not the CPU quota → allow an explicit override
+        threads = threads or int(os.environ.get("FORTE_THREADS", "0")) or max(2, (os.cpu_count() or 4) - 2)
         self.perception = Perception(threads=threads)
         try:
             self.clip = ClipEmbedder(threads=threads)

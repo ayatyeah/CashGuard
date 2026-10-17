@@ -8,10 +8,13 @@ for v in "$@"; do
   resp=$(curl -sS -X POST "$BASE/api/v1/analyze" -H "X-API-Key: $KEY" -F "file=@$v")
   job=$(printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["status"]=="processing", d; print(d["job_id"])')
   echo "[$(basename "$v")] job=$job"
+  r=""
   while :; do
     sleep 5
-    r=$(curl -sS "$BASE/api/v1/jobs/$job" -H "X-API-Key: $KEY")
-    st=$(printf '%s' "$r" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')
+    r=$(curl -sS -m 30 "$BASE/api/v1/jobs/$job" -H "X-API-Key: $KEY" || true)
+    st=$(printf '%s' "$r" | python3 -c 'import json,sys
+try: print(json.load(sys.stdin)["status"])
+except Exception: print("transient")')
     [ "$st" = "done" ] || [ "$st" = "failed" ] && break
     [ $(( $(date +%s) - t0 )) -gt 330 ] && { echo "  TIMEOUT > 330 s"; break; }
   done

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="cashguard-hero__mark" viewBox="-1 -1 21 32" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="forte-surface" x1="0" y1="0" x2="1" y2=".9">
+          <stop offset="0" stop-color="#d44d8b"/><stop offset=".38" stop-color="#c43578"/>
+          <stop offset=".72" stop-color="#a21b58"/><stop offset="1" stop-color="#690d38"/>
+        </linearGradient>
+        <linearGradient id="forte-edge" x1="0" y1="0" x2=".7" y2="1">
+          <stop stop-color="#ffaad2" stop-opacity=".65"/><stop offset=".45" stop-color="#ffaad2" stop-opacity=".15"/><stop offset="1" stop-color="#ffaad2" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <g fill="url(#forte-surface)" stroke="url(#forte-edge)" stroke-width=".055"><path d="M14.8003 11.7568V17.0473C9.55487 17.0473 5.28082 21.3185 5.28082 26.5668V29.6104H-0.00683594V26.5668C-0.00683594 25.0379 0.226857 23.5654 0.657641 22.1773C1.51076 19.4377 3.13535 17.036 5.28082 15.2341C7.43756 13.418 10.118 12.2073 13.0575 11.861C13.629 11.7934 14.209 11.7597 14.8003 11.7597V11.7568Z"/><path d="M18.5253 -0.00585938V5.28461H14.8003C10.5403 5.28461 6.92231 8.09738 5.71442 11.966C3.29865 13.3512 1.31086 15.3954 -0.00683594 17.8562V14.8013C-0.00683594 6.63609 6.63512 -0.00585938 14.8003 -0.00585938H18.5253Z"/></g>
+    </svg>
+  

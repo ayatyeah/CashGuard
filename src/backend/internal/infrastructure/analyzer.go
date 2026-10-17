@@ -10,6 +10,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"log"
 	"os/exec"
 	"time"
 )
@@ -25,7 +26,13 @@ func (a CommandAnalyzer) Analyze(ctx context.Context, j domain.Job) (domain.Job,
 	cmd := exec.CommandContext(ctx, a.Command, j.Path)
 	var output limitedBuffer
 	cmd.Stdout = &output
-	if e := cmd.Run(); e != nil {
+	var diag tailBuffer // analyzer diagnostics (timings, warnings) — surfaced in the service log
+	cmd.Stderr = &diag
+	runErr := cmd.Run()
+	if d := diag.String(); d != "" {
+		log.Printf("analyzer %s stderr:\n%s", j.ID, d)
+	}
+	if runErr != nil {
 		return j, fmt.Errorf("локальный анализатор завершился с ошибкой")
 	}
 	var result domain.Job
@@ -64,6 +71,19 @@ func (a CommandAnalyzer) Analyze(ctx context.Context, j domain.Job) (domain.Job,
 		j.Violations = []domain.Violation{}
 	}
 	return j, nil
+}
+
+// tailBuffer keeps only the last 64 KiB and never fails a write (stderr must not break the job).
+type tailBuffer struct{ bytes.Buffer }
+
+func (b *tailBuffer) Write(p []byte) (int, error) {
+	b.Buffer.Write(p)
+	if b.Len() > 64<<10 {
+		tail := append([]byte(nil), b.Bytes()[b.Len()-64<<10:]...)
+		b.Reset()
+		b.Buffer.Write(tail)
+	}
+	return len(p), nil
 }
 
 type limitedBuffer struct{ bytes.Buffer }
