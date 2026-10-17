@@ -1,0 +1,39 @@
+{
+ "stumps": {
+  "leave_screen": {
+   "thr": 1.2688953280448914,
+   "scale": 0.06605204939842224,
+   "separable": true,
+   "n_pos": 2,
+   "n_neg": 6
+  },
+  "leave_items": {
+   "thr": 0.551153688466767,
+   "scale": 0.09632398221289747,
+   "separable": true,
+   "n_pos": 3,
+   "n_neg": 5
+  },
+  "entry_door": {
+   "thr": 0.13364863073868546,
+   "scale": 0.010874610143995721,
+   "separable": true,
+   "n_pos": 3,
+   "n_neg": 7
+  },
+  "crowd_standing": {
+   "thr": 0.657967032967033,
+   "scale": 0.13255494505494508,
+   "separable": true,
+   "n_pos": 4,
+   "n_neg": 6
+  },
+  "drink_clip": {
+   "thr": 0.5650919377803802,
+   "scale": 0.19773830473423004,
+   "separable": true,
+   "n_pos": 2,
+   "n_neg": 10
+  }
+ }
+}

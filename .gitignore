@@ -9,7 +9,8 @@ data/
 .venv/
 __pycache__/
 *.pyc
-models/
+models/*
+!models/*.json
 runs/
 jobs/
 *.onnx
