@@ -17,3 +17,12 @@ jobs/
 *.pth
 .env
 scratch_frames/
+
+node_modules/
+dist/
+*.tsbuildinfo
+src/backend/data/
+*.exe
+*.db
+*.db-wal
+*.db-shm

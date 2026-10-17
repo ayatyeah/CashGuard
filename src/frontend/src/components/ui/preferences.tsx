@@ -1,0 +1,4 @@
+import {Moon,Sun} from 'lucide-react';
+import {useWorkspace} from '@/lib/workspace';
+import type {Language} from '@/lib/translations';
+export function Preferences(){const {t,theme,language,preferences,saving,ready}=useWorkspace();return <div className="preferences"><select aria-label={t('Язык интерфейса')} value={language} disabled={saving||!ready} onChange={e=>void preferences(theme,e.target.value as Language)}><option value="ru">Русский</option><option value="en">English</option><option value="kk">Қазақша</option></select><button className="icon-button" aria-label={t(theme==='light'?'Тёмная тема':'Светлая тема')} title={t(theme==='light'?'Тёмная тема':'Светлая тема')} disabled={saving||!ready} onClick={()=>void preferences(theme==='light'?'dark':'light',language)}>{theme==='light'?<Moon size={18}/>:<Sun size={18}/>}</button></div>}

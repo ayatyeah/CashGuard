@@ -1,0 +1,71 @@
+name: cashguard
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cashguard
+      POSTGRES_USER: cashguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cashguard -d cashguard"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  backend:
+    build: ./src/backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://cashguard:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/cashguard?sslmode=disable
+      API_KEY: ${API_KEY:?Set API_KEY in .env}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      DATA_DIR: /data
+      ADDR: 0.0.0.0:8080
+    volumes:
+      - uploads:/data
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8081}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/api/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+  frontend:
+    build: ./src/frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+  migrate:
+    profiles: ["tools"]
+    build: ./src/backend
+    command: ["/app/migrate"]
+    environment:
+      DATABASE_URL: postgres://cashguard:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/cashguard?sslmode=disable
+      SQLITE_PATH: /legacy/cashguard.db
+      DATA_DIR: /data
+    volumes:
+      - ./src/backend/data:/legacy:ro
+      - uploads:/data
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres_data:
+  uploads:
+
