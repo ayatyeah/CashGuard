@@ -19,7 +19,7 @@ bash scripts/download_models.sh                       # веса (Apache-2.0/MIT
 **Подключение к Go-бэкенду CashGuard:** `DEMO_MODE=false`, `ANALYZER_COMMAND=<abs path>/bin/cashguard-analyzer`.
 Лаунчер принимает путь к видео, пишет в stdout только JSON по контракту (`status`, `verdict`, `violations[]` с
 `evidence_frames` в JPEG base64 и `rule = {title, section, url}`), логи — в stderr. Работает офлайн
-(`HF_HUB_OFFLINE=1`), бюджет времени — `ANALYZER_BUDGET_SEC` (по умолчанию 240). Python берётся из `.venv`
+(`HF_HUB_OFFLINE=1`), бюджет времени — второй аргумент от Go-бэкенда (остаток до срока задания), без него `ANALYZER_BUDGET_SEC` (по умолчанию 240). Python берётся из `.venv`
 или из `CASHGUARD_PYTHON`.
 
 ## Данные
@@ -48,6 +48,26 @@ bash scripts/download_models.sh                       # веса (Apache-2.0/MIT
 # CashGuard
 
 Локальное приложение для проверки видео кассовых операций. React + TypeScript + Tailwind + shadcn/ui; сервер Go + Gin.
+
+## Быстрый запуск с моделью и публичным URL (macOS / Linux)
+
+```bash
+cp .env.example .env            # задать POSTGRES_PASSWORD и API_KEY; DEMO_MODE=false — настоящая модель
+docker compose --profile public up -d --build
+docker compose logs tunnel | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com'   # публичный адрес
+```
+
+Первая сборка скачивает torch и веса моделей (YOLOX, RTMPose, CLIP) в образ backend, после этого анализ работает без интернета.
+Без `--profile public` сервис доступен только локально: http://127.0.0.1:3000. Адрес quick tunnel меняется при каждом перезапуске контейнера `tunnel`.
+
+API для жюри (ТЗ §10), ключ в заголовке `X-API-Key`:
+
+```bash
+curl -X POST https://<адрес>/api/v1/analyze -H "X-API-Key: <ключ>" -F "file=@video_017.mov"   # → {"job_id": "...", "status": "processing"}
+curl https://<адрес>/api/v1/jobs/<job_id> -H "X-API-Key: <ключ>"                              # → processing | done | failed
+```
+
+Срок анализа отсчитывается от момента загрузки: `JOB_DEADLINE_SEC=285`, модель получает оставшийся бюджет (≈270 с) и при нехватке времени переходит в дешёвый режим. Видео, дождавшееся очереди позже чем за 30 с до срока, завершается `failed` с объяснением.
 
 ## Docker Compose (основной запуск)
 
@@ -158,7 +178,9 @@ $env:ANALYZER_COMMAND = 'C:\models\cash-analyzer.exe'
 go -C src/backend run ./cmd/server
 ```
 
-Адаптер запускает исполняемый файл напрямую, без shell, с единственным аргументом — абсолютным путём видео. Анализатор пишет завершённый JSON в stdout (не более 32 МБ), логи — в stderr; код выхода 0. Максимальное время — 15 минут. Он должен возвращать `status: done`, вердикт и список нарушений по контракту пользователя. `job_id` и метаданные назначает Go-сервер. Python-модель можно обернуть в локальный исполняемый launcher. Модель и все веса должны находиться локально; облачные API использовать нельзя.
+В Compose это уже настроено: образ `src/backend/Dockerfile.ml` содержит модель, `ANALYZER_COMMAND=/opt/ml/bin/cashguard-analyzer`.
+
+Адаптер запускает исполняемый файл напрямую, без shell, с двумя аргументами — абсолютным путём видео и бюджетом в секундах. Анализатор пишет завершённый JSON в stdout (не более 32 МБ), логи — в stderr; код выхода 0. Максимальное время — до срока задания (JOB_DEADLINE_SEC от загрузки, по умолчанию 285 с). Он должен возвращать `status: done`, вердикт и список нарушений по контракту пользователя. `job_id` и метаданные назначает Go-сервер. Python-модель можно обернуть в локальный исполняемый launcher. Модель и все веса должны находиться локально; облачные API использовать нельзя.
 
 Модель, веса, обучающий датасет и нормативные правила не предоставлены и в репозиторий не включены. Распознавание реальных нарушений и нормативное обоснование ещё нужно реализовать в анализаторе; интерфейс не выдумывает ссылки и показывает отсутствие источника. Это готовый слой приложения и интеграции, а не обученная AI-модель.
 

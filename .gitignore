@@ -27,3 +27,4 @@ src/backend/data/
 *.db
 *.db-wal
 *.db-shm
+_env

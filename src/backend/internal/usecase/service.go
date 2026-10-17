@@ -15,10 +15,15 @@ type Service struct {
 	Analyzer domain.Analyzer
 	queue    chan domain.Job
 	Demo     bool
+	// Deadline is counted from upload time: the jury waits at most 5 minutes per video (ТЗ §10).
+	Deadline time.Duration
 }
 
+// MinBudget is the least time worth starting an analysis with; below it the job fails explicitly.
+const MinBudget = 30 * time.Second
+
 func New(repo domain.Repository, a domain.Analyzer, demo bool) *Service {
-	s := &Service{Repo: repo, Analyzer: a, queue: make(chan domain.Job, 20), Demo: demo}
+	s := &Service{Repo: repo, Analyzer: a, queue: make(chan domain.Job, 20), Demo: demo, Deadline: 285 * time.Second}
 	go s.worker()
 	return s
 }
@@ -53,10 +58,24 @@ func (s *Service) worker() {
 			log.Printf("save processing: %v", e)
 			continue
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-		result, e := s.Analyzer.Analyze(ctx, j)
-		cancel()
+		deadline := time.Now().Add(s.Deadline)
+		if created, e := time.Parse(time.RFC3339Nano, j.Created); e == nil {
+			deadline = created.Add(s.Deadline)
+		}
+		var result domain.Job
+		var e error
+		if time.Until(deadline) < MinBudget {
+			e = fmt.Errorf("не хватило времени на анализ: видео слишком долго ждало в очереди")
+		} else {
+			ctx, cancel := context.WithDeadline(context.Background(), deadline)
+			result, e = s.Analyzer.Analyze(ctx, j)
+			if ctx.Err() == context.DeadlineExceeded {
+				e = fmt.Errorf("анализ не уложился в отведённое время")
+			}
+			cancel()
+		}
 		if e != nil {
+			log.Printf("job %s failed: %v", j.ID, e)
 			j.Status = "failed"
 			j.Error = e.Error()
 		} else {

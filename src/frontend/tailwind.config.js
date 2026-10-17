@@ -1,1 +1,2 @@
-export default {content:['./index.html','./src/**/*.{ts,tsx}'],theme:{extend:{colors:{border:'hsl(var(--border))',input:'hsl(var(--border))',background:'hsl(var(--background))',foreground:'hsl(var(--foreground))',primary:{DEFAULT:'hsl(var(--primary))',foreground:'#fff'},card:{DEFAULT:'#fff',foreground:'#172735'},muted:{DEFAULT:'#f3f5f7',foreground:'#7c8794'},accent:{DEFAULT:'#f3f5f7',foreground:'#172735'},secondary:{DEFAULT:'#f3f5f7',foreground:'#172735'},ring:'#168674',destructive:{DEFAULT:'#c74a4a',foreground:'#fff'}}}},plugins:[]};
+// Theme colours live in src/index.css (@theme inline), so opacity modifiers like bg-card/50 work in Tailwind v4.
+export default {content: ['./index.html', './src/**/*.{ts,tsx}'], plugins: []};

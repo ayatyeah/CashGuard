@@ -1,6 +1,7 @@
 """Launcher for the Go backend (ANALYZER_COMMAND contract, see README «Подключение локальной модели»).
 
-    cashguard_analyzer.py <absolute-video-path>
+    cashguard_analyzer.py <absolute-video-path> [budget-seconds]
+The Go backend passes the budget left until the job deadline (counted from upload); without it ANALYZER_BUDGET_SEC is used.
 stdout: the completed result JSON only; all logs go to stderr; exit code 0 on success.
 """
 from __future__ import annotations
@@ -18,8 +19,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: cashguard_analyzer.py <video>", file=sys.stderr)
+    if len(sys.argv) not in (2, 3):
+        print("usage: cashguard_analyzer.py <video> [budget-seconds]", file=sys.stderr)
         return 2
     path = sys.argv[1]
     from app.analyzers.ml import MLAnalyzer
@@ -29,7 +30,7 @@ def main() -> int:
 
     an = MLAnalyzer()
     meta = video_meta(path)
-    budget = float(os.environ.get("ANALYZER_BUDGET_SEC", "240"))
+    budget = float(sys.argv[2] if len(sys.argv) == 3 else os.environ.get("ANALYZER_BUDGET_SEC", "240"))
     res = an.analyze(path, meta, budget)
     fps = meta["fps"] or 30.0
     violations = []
