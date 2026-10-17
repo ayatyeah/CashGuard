@@ -45,6 +45,9 @@ RULES = {
                 lambda f: 0.75 if (f.get("n_max", 0) >= 3 and f.get("dur", 0) >= 2.0 and "standing" not in f) else 0.0),
     "short_visit": ("short_visit", "count_not_in_client_presence",
                     lambda f: 0.7 if f.get("dwell", 99) < 20 and f.get("max_d", 9) < 1.5 else 0.0),
+    "left_client": ("leave", "cashier_left_client_waiting",
+                    lambda f: 0.75 if (f.get("client_remains", 0) >= 4.0 and f.get("max_d", 0) > 0.9
+                                       and f.get("end_gap", 0) >= 0.5) else 0.0),
     "phone": ("phone", "phone_use",
               lambda f: 0.7 if (f.get("prob", 0) >= 0.85 and f.get("persist", 0) >= 4 and f.get("clip", 0) >= 0.6) else 0.0),
 }

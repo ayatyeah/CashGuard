@@ -28,7 +28,7 @@ DEFAULT_TYPE = {
 }
 FEATS = ["rem", "max_d", "end_gap", "end_score", "screen", "items", "desk_probe", "light_drop", "door_change",
          "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob", "safe_change",
-         "persistent_change", "zncc_change", "small_residual"]
+         "persistent_change", "zncc_change", "small_residual", "client_remains"]
 
 
 @dataclass
@@ -299,6 +299,12 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
                  "light_drop": float((b0 - b1) / (b0 + 1))}
             # objects stayed on the desk AND no time was spent securing them (safe) before walking away
             f["unsecured"] = f["items"] / (1.0 + f["tidy"] / 5.0)
+            # a client still at the desk after the cashier left (п. 22): visitor within 1.2 ref_h of the seat
+            vis_late = 0
+            for tr in visitors:
+                m = (tr.t >= t_walk + 1.0) & (tr.info["d"] < 1.2)
+                vis_late = max(vis_late, int(m.sum()))
+            f["client_remains"] = vis_late / 2.0  # seconds at 2 fps
             iw = _idx(scene, t_walk)
             # evidence: start of the walk + the unattended desk afterwards
             free = [i for i in late if desk is None or not _overlap(desk, _persons(obs[i], 0.5))]
