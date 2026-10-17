@@ -27,3 +27,6 @@ src/backend/data/
 *.db
 *.db-wal
 *.db-shm
+
+# VLM answers computed on the Mac (small JSON, tracked)
+!artifacts/

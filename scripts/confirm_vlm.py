@@ -19,7 +19,12 @@ from app.ml.vlm import VLM  # noqa: E402
 
 
 def main():
-    src, dst = os.path.join(ROOT, "data", "vlm"), os.path.join(ROOT, "data", "vlm_confirmed")
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--src", default=os.path.join("data", "vlm"))
+    ap.add_argument("--dst", default=os.path.join("data", "vlm_confirmed"))
+    a = ap.parse_args()
+    src, dst = os.path.join(ROOT, a.src), os.path.join(ROOT, a.dst)
     os.makedirs(dst, exist_ok=True)
     vlm = None
     for f in sorted(os.listdir(src)):

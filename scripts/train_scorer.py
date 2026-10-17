@@ -32,8 +32,8 @@ def collect():
         if lab["split"] != "train":
             continue
         _, sc, cands = candidates_for(name, bank)
-        vdir = "vlm_confirmed" if "--vlm-confirmed" in sys.argv else "vlm"
-        vpath = os.path.join(ROOT, "data", vdir, f"{name}.json")
+        vdir = os.environ.get("FORTE_VLM_DIR") or os.path.join("data", "vlm_confirmed" if "--vlm-confirmed" in sys.argv else "vlm")
+        vpath = os.path.join(ROOT, vdir, f"{name}.json")
         if os.path.exists(vpath):
             cands += M.to_candidates(sc, json.load(open(vpath)))
         types = [t for _, t in lab["types"]] + EXTRA_TYPES.get(name, [])
