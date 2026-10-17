@@ -75,6 +75,7 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
         if any(k.type_id == e.type_id and abs(k.t - e.t) < 6.0 for k in kept):
             continue
         kept.append(e)
+    kept = sorted(kept, key=lambda e: -e.p)[:3]
     kept.sort(key=lambda e: e.t)
     info = {"n_candidates": len(cands), "cashier_found": scene.seat is not None,
             "vlm_moments": len(moms or []), "vlm_skipped": sum(1 for m in (moms or []) if m.get("skipped")),
@@ -83,6 +84,16 @@ def run(obs, frames, W, H, models: Models, clip=None, clip_wa: np.ndarray | None
 
 
 TEMPLATES = {
+    "cashier_left_client_waiting": "Около {t:.0f} с кассир встаёт и уходит с рабочего места, пока посетитель остаётся у стола "
+                                   "— обслуживание клиента не завершено.",
+    "cash_payout_not_counted": "Около {t:.0f} с кассир передаёт наличные клиенту; непосредственно перед передачей эпизода "
+                               "пересчёта (на счётной машинке или вручную) в присутствии клиента не видно.",
+    "cash_returned_to_client": "Около {t:.0f} с после пересчёта кассир передаёт пачку наличных обратно клиенту; в сейф "
+                               "деньги не убраны.",
+    "collection_bag_emptied_no_count": "Около {t:.0f} с содержимое инкассаторской сумки перекладывается в сейф; между "
+                                       "вскрытием сумки и закладкой в сейф пересчёта (машинка/вручную) не видно.",
+    "cash_to_third_party": "Около {t:.0f} с наличные передаются лицу, не являющемуся обслуживаемым клиентом, либо убираются "
+                           "вне запираемого хранилища.",
     "cash_left_on_desk": "Около {t:.0f} с в помещение входит следующий посетитель, а стол кассира не вернулся к виду до "
                          "предыдущей операции: на нём остались предметы (по виду — наличные предыдущего клиента), "
                          "в сейф они не убраны.",
@@ -116,12 +127,16 @@ def describe(e: Event, norms: dict) -> str:
     vals = {"t": e.t, **{k: float(v) for k, v in e.f.items()}}
     for k in ("screen", "dur", "dwell", "persist"):
         vals.setdefault(k, 0.0)
-    text = TEMPLATES.get(e.type_id, "Около {t:.0f} с — признаки возможного нарушения, требуется проверка.").format(**vals)
+    obs_text = TEMPLATES.get(e.type_id, "Около {t:.0f} с — признаки возможного нарушения, требуется проверка.").format(**vals)
     n = norms.get(e.type_id) or {}
+    text = f"Наблюдается: {obs_text} Квалификация: {n.get('title', e.type_id)}."
     if n.get("source_verified") and n.get("document"):
         rel = " (связанное требование)" if n.get("interpretive") else ""
-        text += f" Норматив{rel}: {n['document']}, {n['clause']}."
-    return text + " Результат — подсказка для проверки человеком."
+        text += f" Норма{rel}: {n['document']}, {n['clause']}."
+        if n.get("quote"):
+            q = n["quote"] if len(n["quote"]) <= 220 else n["quote"][:217].rstrip() + "…"
+            text += f" Цитата: «{q}»"
+    return text + " Результат — подсказка для проверки человеком, не юридическое заключение."
 
 
 def title(type_id: str, norms: dict) -> str:

@@ -12,6 +12,7 @@ Candidate kinds (→ default type_id from app/rules/norms.yaml):
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import os
 
 import cv2
 import numpy as np
@@ -26,7 +27,8 @@ DEFAULT_TYPE = {
     "next_visit": "cash_left_on_desk", "safe": "safe_left_open",
 }
 FEATS = ["rem", "max_d", "end_gap", "end_score", "screen", "items", "desk_probe", "light_drop", "door_change",
-         "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob", "safe_change"]
+         "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob", "safe_change",
+         "persistent_change", "zncc_change", "small_residual"]
 
 
 @dataclass
@@ -335,9 +337,9 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
         if not vals:
             continue
         door_min = float(np.min(vals))
-        te = t_in + 1.5
+        te = t_in + 3.0  # organisers' convention: the moment the person walks away leaving the door open
         ie = _idx(scene, te)
-        cands.append(Cand("entry", te, ie, [ie, _idx(scene, t_in + 7.0)],
+        cands.append(Cand("entry", te, ie, [_idx(scene, t_in + 1.0), ie, _idx(scene, t_in + 7.0)],
                           {"door_change": float(np.median(vals)), "door_min": door_min, "dur": float(tr.t[-1] - tr.t[0]),
                            "standing": 1.0 if tr.role == "cashier" else 0.0}))
 
@@ -379,9 +381,11 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
                 i_a = _idx(scene, a0 + 1.0)
                 gap = [j for j in range(len(obs)) if a1 + 1.0 <= times[j] <= b0 - 0.5]
                 vals, blobs = [], []
+                proto_targets, proto_masks = [], []
                 for j in gap[-4:]:
                     mk = reg & person_mask(gray[0].shape, obs[i_a], scale) & person_mask(gray[0].shape, obs[j], scale)
                     vals.append(change_score(gray[i_a], gray[j], mk))
+                    proto_targets.append(gray[j]); proto_masks.append(mk)
                     blobs.append(new_blob(gray[i_a], gray[j], mk, scene.ref_h * scale))
                 vals = [v for v in vals if v == v]
                 blobs = [v for v in blobs if v == v]
@@ -391,6 +395,9 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
                     cands.append(Cand("next_visit", te, ie, [ie, gap[-1]],
                                       {"desk_change": float(np.median(vals)), "dur": float(a1 - a0),
                                        "desk_blob": float(np.median(blobs)) if blobs else 0.0}))
+                    if os.environ.get("FORTE_ZONE_PROTOTYPES") == "1":
+                        from .zone_prototypes import residual_features
+                        cands[-1].f.update(residual_features(gray[i_a], proto_targets, proto_masks, scene.ref_h * scale))
 
     # ---------------- safe left open: the safe zone looks different at the end than at the start ----------
     from .moments import safe_zone, _box_overlap
@@ -415,9 +422,11 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
             late = [i for i in free if times[i] > float(times[max(standing)])]
             if late:
                 vals = []
+                proto_targets, proto_masks = [], []
                 for j in late[-4:]:
                     mk = reg & person_mask(gray[0].shape, obs[i0], scale) & person_mask(gray[0].shape, obs[j], scale)
                     vals.append(change_score(gray[i0], gray[j], mk, normalize_contrast=True))
+                    proto_targets.append(gray[j]); proto_masks.append(mk)
                 vals = [v for v in vals if v == v]
                 if vals:
                     # event time: when the cashier walked away from the safe for the last time
@@ -425,6 +434,9 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
                     ie = _idx(scene, t_leave)
                     cands.append(Cand("safe", t_leave, ie, [ie, late[-1]],
                                       {"safe_change": float(np.median(vals)), "dur": float(times[-1] - t_leave)}))
+                    if os.environ.get("FORTE_ZONE_PROTOTYPES") == "1":
+                        from .zone_prototypes import residual_features
+                        cands[-1].f.update(residual_features(gray[i0], proto_targets, proto_masks, scene.ref_h * scale))
 
     # ---------------- crowd ----------------
     n = scene.n_inside

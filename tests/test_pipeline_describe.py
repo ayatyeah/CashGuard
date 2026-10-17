@@ -5,7 +5,7 @@ import pytest
 
 from app.ml import pipeline as PL
 
-SUFFIX = " Результат — подсказка для проверки человеком."
+SUFFIX = " Результат — подсказка для проверки человеком, не юридическое заключение."
 INTERP = " (связанное требование)"
 
 
@@ -29,11 +29,11 @@ def test_norm_reference_appended_when_source_verified(type_id, norms):
     if n.get("source_verified") and n.get("document"):
         assert f"{n['document']}, {n['clause']}." in text
         if n.get("interpretive"):
-            assert f"Норматив{INTERP}: " in text
+            assert f"Норма{INTERP}: " in text
         else:
-            assert "Норматив: " in text and f"Норматив{INTERP}" not in text
+            assert "Норма: " in text and f"Норма{INTERP}" not in text
     else:
-        assert "Норматив" not in text
+        assert "Норма:" not in text and "Норма (" not in text
 
 
 def test_interpretive_and_direct_norms_both_present_in_yaml(norms):
@@ -44,9 +44,9 @@ def test_interpretive_and_direct_norms_both_present_in_yaml(norms):
 
 
 def test_specific_marking(norms):
-    assert f"Норматив{INTERP}:" in PL.describe(ev("door_left_open"), norms)          # interpretive: true
+    assert f"Норма{INTERP}:" in PL.describe(ev("door_left_open"), norms)          # interpretive: true
     direct = PL.describe(ev("left_cash_unattended"), norms)                          # interpretive: false
-    assert "Норматив: " in direct and INTERP not in direct
+    assert "Норма: " in direct and INTERP not in direct
 
 
 @pytest.mark.parametrize("norm, has_ref", [
@@ -63,8 +63,8 @@ def test_norm_reference_rules_on_synthetic_norms(norm, has_ref):
 
 def test_unknown_type_and_empty_norms():
     text = PL.describe(ev("something_new"), {})
-    assert text.startswith("Около 42 с") and text.endswith(SUFFIX)
-    assert "Норматив" not in text
+    assert text.startswith("Наблюдается: Около 42 с") and text.endswith(SUFFIX)
+    assert "Норма:" not in text and "Норма (" not in text
     assert PL.title("something_new", {}) == "something_new"
 
 

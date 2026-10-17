@@ -1,15 +1,17 @@
-"""Build a small supervised dataset (image + question + JSON answer) for LoRA fine-tuning of the VLM
+"""Build weak-label proposals for a small supervised dataset (image + question + JSON answer) for LoRA fine-tuning of the VLM
 (mlx-vlm on a Mac) from our cached frames and the per-video ground truth in docs/train_timelines.md.
 
 Pairs come from the same key moments the runtime asks about (teller at work, client visit, desk after leaving,
-safe zone, between visits), so the fine-tuned model is trained on exactly the questions it will be asked.
+safe zone, between visits), but video-level truth must be reviewed on every crop before training.
 Split is by cabinet (configs/cabinets.json): --val-cabinets C,E  → val, the rest → train.
 
-usage: python scripts/make_vlm_sft.py --out data/sft [--val-cabinets C,E] [--aug 2]
+usage: python scripts/make_vlm_sft.py --out data/sft [--val-cabinets C,E] [--aug 0] [--dry-run]
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+from pathlib import Path
 import json
 import os
 import pickle
@@ -79,7 +81,7 @@ CONTEXT = {
 
 def answer_json(keys: list[str], truth: dict):
     """Only keys with known ground truth go into the question and the answer."""
-    known = {k: bool(truth[k]) for k in keys if k in truth}
+    known = {k: truth[k] for k in keys if isinstance(truth.get(k), bool)}
     if not known:
         return None, None
     return list(known), json.dumps(known)
@@ -101,20 +103,35 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="data/sft")
     ap.add_argument("--val-cabinets", default="C,E")
-    ap.add_argument("--aug", type=int, default=2, help="augmented copies per pair (train split only)")
+    ap.add_argument("--aug", type=int, default=0, help="augmented copies per pair (train split only)")
+    ap.add_argument("--dry-run", action="store_true", help="validate/generate row counts without writing images or JSONL")
     a = ap.parse_args()
+    if a.aug < 0:
+        ap.error("--aug must be nonnegative")
     rng = random.Random(0)
     labels = load_labels()
-    val_cab = set(a.val_cabinets.split(","))
-    os.makedirs(os.path.join(a.out, "images"), exist_ok=True)
+    val_cab = {c.strip() for c in a.val_cabinets.split(",") if c.strip()}
+    known_cab = {v.get("cabinet") for v in labels.values()} - {None}
+    if not val_cab or not val_cab <= known_cab:
+        ap.error(f"unknown or empty validation cabinets: {val_cab}")
+    if any(not v.get("cabinet") for v in labels.values()):
+        ap.error("every video must have a cabinet; refusing possible train/val leakage")
+    if not a.dry_run:
+        if Path(a.out).exists() and any(Path(a.out).iterdir()):
+            ap.error("output must be empty; stale images/rows can contaminate splits")
+        os.makedirs(os.path.join(a.out, "images"), exist_ok=True)
+    manifest = []
+    image_splits = {}
     rows = {"train": [], "val": []}
     stats = {}
     for name, lab in sorted(labels.items()):
-        if "base" in lab:
+        if "base" in lab or lab.get("split") != "train":
             continue
         d = pickle.load(open(os.path.join(CACHE, f"{name}.pkl"), "rb"))
         obs = d["obs"]
         frames = [cv2.imread(os.path.join(CACHE, "frames", name, f"{o.frame_id:05d}.jpg")) for o in obs]
+        if any(f is None for f in frames):
+            raise ValueError(f"missing/corrupt cached frame: {name}")
         sc = analyze_scene(obs, d["meta"]["width"], d["meta"]["height"])
         leaves = [c for c in generate(sc, [cv2.resize(f, None, fx=0.5, fy=0.5) for f in frames]) if c.kind == "leave"]
         moms = M.propose(sc, frames, leaves)
@@ -138,16 +155,31 @@ def main():
                     variants.append((V.compose([augment(im, rng) for im in imgs]), f"aug{k}"))
             for img, tag in variants:
                 fn = f"{name.replace('Х', 'X')}_{kind}_{mi}_{tag}.jpg"
-                cv2.imwrite(os.path.join(a.out, "images", fn), img, [cv2.IMWRITE_JPEG_QUALITY, 90])
-                rows[split].append({"image": f"images/{fn}",
+                digest = hashlib.sha256(img.tobytes()).hexdigest()
+                previous = image_splits.setdefault(digest, split)
+                if previous != split:
+                    raise ValueError("identical image appears across train/validation")
+                if not a.dry_run:
+                    if not cv2.imwrite(os.path.join(a.out, "images", fn), img, [cv2.IMWRITE_JPEG_QUALITY, 90]):
+                        raise OSError(f"cannot write {fn}")
+                manifest.append({"video": name, "cabinet": lab["cabinet"], "split": split,
+                                 "kind": kind, "image": fn, "sha256_pixels": digest,
+                                 "frame_ids": [int(obs[i].frame_id) for i in m["idx"]],
+                                 "label_status": "weak_video_labels_review_crop_before_training"})
+                rows[split].append({"images": [f"images/{fn}"],
                                     "messages": [{"role": "system", "content": V.SYSTEM},
                                                  {"role": "user", "content": prompt},
                                                  {"role": "assistant", "content": ans}]})
                 stats[(split, kind)] = stats.get((split, kind), 0) + 1
+    if a.dry_run:
+        print("DRY RUN: no files written; labels remain weak until crop review")
+        print({s: len(rs) for s, rs in rows.items()})
+        return
     for split, rs in rows.items():
-        with open(os.path.join(a.out, f"{split}.jsonl"), "w") as f:
+        with open(os.path.join(a.out, f"{'validation' if split == 'val' else split}.jsonl"), "w") as f:
             for r in rs:
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    Path(a.out, "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
     print({f"{s}/{k}": n for (s, k), n in sorted(stats.items())})
     print(f"train {len(rows['train'])}  val {len(rows['val'])}  → {a.out}")
 

@@ -117,12 +117,18 @@ def lovo_predict(rows, videos, enabled):
 
 
 def lovo_score(pred, labels, videos):
-    err = fp = 0
+    """Higher is better: -(2·FN + FP), then -FP (a miss costs ≈ 2× a false alarm in the jury's scoring)."""
+    fn = fp = 0
     for v in videos:
         y = int(bool(pred.get(v)))
-        err += y != labels[v]["label"]
+        fn += (not y) and labels[v]["label"]
         fp += y and not labels[v]["label"]
-    return -err, -fp
+    return -(2 * fn + fp), -fp
+
+
+def accepts_cv(score, best):
+    """Neither total errors nor false positives may increase."""
+    return score[0] >= best[0] and score[1] >= best[1]
 
 
 def main():
@@ -139,17 +145,17 @@ def main():
     print("CV:", "leave-one-video-out" if by_video else "leave-one-CABINET-out",
           f"({len(set(GROUPS.values()))} groups, {len(videos)} videos, {len(originals)} originals)")
     EXPERIMENTAL = {"next_visit_desk", "safe_open"}  # new, weakly supported features: kept only if CV does not get worse
-    base = {k for k in S.STUMPS if not k.startswith("vlm_") and k not in EXPERIMENTAL}
+    base = {k for k in S.STUMPS if not k.startswith("vlm_") and k not in EXPERIMENTAL and k not in S.ZONE_EXPERIMENTAL}
     best = lovo_score(lovo_predict(rows, videos, base), labels, originals)
-    print("LOVO base (CV only): errors", -best[0], "FP", -best[1])
+    print("LOVO base (CV only): loss(2FN+FP)", -best[0], "FP", -best[1])
     # greedy forward selection of VLM features by LOVO (keep only if it does not hurt)
     enabled = set(base)
     for k in sorted(EXPERIMENTAL) + [k for k in S.STUMPS if k.startswith("vlm_")]:
         sc = lovo_score(lovo_predict(rows, videos, enabled | {k}), labels, originals)
         # keep if it does not hurt LOVO: single-example types cannot show a LOVO gain, but extra false
         # positives on the normal videos would show up here
-        print(f"  + {k:34s} errors {-sc[0]:2d} FP {-sc[1]}", "KEEP" if sc >= best else "")
-        if sc >= best:
+        print(f"  + {k:34s} loss {-sc[0]:2d} FP {-sc[1]}", "KEEP" if accepts_cv(sc, best) else "")
+        if accepts_cv(sc, best):
             best, enabled = sc, enabled | {k}
     if not with_vlm:
         enabled = {k for k in enabled if not k.startswith("vlm_")}

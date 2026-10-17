@@ -258,6 +258,10 @@ def to_candidates(scene: Scene, moments: list[dict]) -> list[Cand]:
                 continue
             first = min(yes, key=lambda m: m["t"])
             i0 = int(first["idx"][0])
+            if k in ("handbag_or_coat_on_desk",) and scene.present.any():
+                i_seat = int(np.argmax(scene.present))  # first frame the cashier is at the workplace
+                if i_seat > i0:
+                    i0 = i_seat
             out.append(Cand(f"vlm_{k}", float(scene.times[i0]), i0, [int(x) for x in first["idx"]][:3],
                             {"count": float(len(yes)), "frac": len(yes) / len(ms)}, type_id=VLM_TYPES[k]))
     return out

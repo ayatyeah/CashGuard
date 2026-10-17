@@ -269,7 +269,7 @@
   "events": [
    {
     "t": 22,
-    "type_id": "unknown_review"
+    "type_id": "cash_returned_to_client"
    }
   ],
   "layout": "behind",
@@ -280,7 +280,7 @@
   "events": [
    {
     "t": 47,
-    "type_id": "cash_not_counted"
+    "type_id": "collection_bag_emptied_no_count"
    }
   ],
   "layout": "front",

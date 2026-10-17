@@ -22,6 +22,14 @@ STUMPS = {
     "safe_open": ("safe", "safe_change", "safe_left_open", {"dur": 3.0}),
 }
 
+# Opt-in experimental features are excluded from the default training set.
+ZONE_EXPERIMENTAL = {
+    "proto_safe_zncc": ("safe", "zncc_change", "safe_left_open", {"dur": 3.0}),
+    "proto_desk_persistent": ("next_visit", "persistent_change", "cash_left_on_desk", {}),
+    "proto_safe_small": ("safe", "small_residual", "safe_key_left", {"dur": 3.0}),
+}
+STUMPS.update(ZONE_EXPERIMENTAL)
+
 # VLM answers (app/ml/moments.py): "vlm_<key>" candidates, feature "count" = number of "yes" answers
 for _k, _t in {
     "teller_holds_phone": "phone_use", "teller_drinks": "food_drink", "cup_or_food_on_desk": "food_drink",
