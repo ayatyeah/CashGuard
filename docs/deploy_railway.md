@@ -3,7 +3,7 @@
 Один контейнер (`Dockerfile` в корне): React-интерфейс (статика) + Go API + Python-анализатор (YOLOX, RTMPose, CLIP, OWLv2).
 Postgres — плагин Railway, том `/data` — загруженные видео.
 
-Проект: `cashguard` (Railway), сервис `app`, публичный адрес `https://fortecashguard.up.railway.app`.
+Проект: `cashguard` (Railway), сервис `app`, публичный адрес `https://fortecashguard.up.railway.app`. Код — ветка `main` (= `ayat`).
 
 ## Переменные сервиса `app`
 `API_KEY` (ключ для жюри), `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `DEMO_MODE=false`, `FORTE_USE_VLM=0`,
