@@ -24,9 +24,10 @@ except Exception: print("transient")')
     [ -n "$r" ] && printf '%s' "$r" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null && break
     sleep 3; r=$(curl -sS -m 30 "$BASE/api/v1/jobs/$job" -H "X-API-Key: $KEY" || true)
   done
-  RESP="$r" python3 - "$dt" <<'PY'
-import json, sys, base64, os
-r = json.loads(os.environ["RESP"]); dt = int(sys.argv[1])
+  tmp=$(mktemp); printf '%s' "$r" > "$tmp"
+  python3 - "$dt" "$tmp" <<'PY'
+import json, sys, base64
+r = json.load(open(sys.argv[2])); dt = int(sys.argv[1])
 assert r["status"] in ("done", "failed"), r["status"]
 assert r.get("verdict") in ("violation", "no_violation") or r["status"] == "failed", r.get("verdict")
 vs = r.get("violations") or []
@@ -38,5 +39,6 @@ for v in vs:
         assert not f["image_base64"].startswith("data:")
 print(f"  status={r['status']} verdict={r.get('verdict')} events={[(v['type'][:40], v['timecode_sec']) for v in vs]}  {dt}s {'OK' if dt <= 300 else 'OVER 5 MIN'}")
 PY
+  rm -f "$tmp"
 done
 echo "unauthorized check:"; curl -sS -o /dev/null -w '  no key -> HTTP %{http_code}\n' -X POST "$BASE/api/v1/analyze" -F "file=@$1"
