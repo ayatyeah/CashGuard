@@ -34,7 +34,7 @@ def main() -> int:
     meta = video_meta(path)
     # The jury counts 5 minutes from the upload. The backend only passes the file path, but the upload's
     # mtime is the moment it landed on disk — so the time spent waiting in the queue is subtracted here.
-    jury_limit = float(os.environ.get("ANALYZER_JURY_LIMIT_SEC", "270"))
+    jury_limit = float(os.environ.get("ANALYZER_JURY_LIMIT_SEC", "255"))  # 300 s jury limit minus upload/evidence margin
     try:
         waited = max(0.0, T0 - os.path.getmtime(path))
     except OSError:

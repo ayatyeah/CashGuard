@@ -89,17 +89,19 @@ class MLAnalyzer:
                     frames.append(cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
                     wa_crops.append(cv2.resize(crop(img, o.extra.get("work_area")), (224, 224)))
                     last_t = t
-                    if len(obs) == 8:
-                        per = (time.time() - t_perc_start) / 8
+                    if len(obs) >= 6 and len(obs) % 6 == 0:
+                        # re-plan: thin the sampling over the REST of the video rather than cut its end off
+                        per = (time.time() - t_perc_start) / len(obs)
                         remaining = max(0.0, duration - t)
                         allowed = self.PERCEPTION_SHARE * budget_sec - (time.time() - t0)
                         need = remaining * (src_fps / step) * per
                         if need > allowed and allowed > 0:
                             new_step = int(np.ceil(step * need / allowed))
                             if new_step > step:
-                                step = min(new_step, int(src_fps * 2))  # never below 0.5 fps
-                                mode = "cheap"
-                                warnings.append(f"мало времени: частота кадров снижена до {src_fps / step:.1f}/с")
+                                step = min(new_step, int(src_fps * 4))  # floor 0.25 fps
+                                if mode != "cheap":
+                                    mode = "cheap"
+                                    warnings.append("мало времени: частота кадров снижена")
                     if time.time() > deadline:
                         warnings.append(f"анализ остановлен по времени на {t:.0f} с из {duration:.0f} с")
                         truncated = True
