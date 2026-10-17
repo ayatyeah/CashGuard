@@ -3,7 +3,7 @@
 Один контейнер (`Dockerfile` в корне): React-интерфейс (статика) + Go API + Python-анализатор (YOLOX, RTMPose, CLIP, OWLv2).
 Postgres — плагин Railway, том `/data` — загруженные видео.
 
-Проект: `cashguard` (Railway), сервис `app`, публичный адрес `https://app-production-d11c.up.railway.app`.
+Проект: `cashguard` (Railway), сервис `app`, публичный адрес `https://fortecashguard.up.railway.app`.
 
 ## Переменные сервиса `app`
 `API_KEY` (ключ для жюри), `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `DEMO_MODE=false`, `FORTE_USE_VLM=0`,
@@ -20,7 +20,7 @@ railway variables       # переменные
 
 ## Проверка «как жюри»
 ```bash
-BASE=https://app-production-d11c.up.railway.app KEY=<API_KEY> bash scripts/smoke_jury.sh video1.mov video2.mov
+BASE=https://fortecashguard.up.railway.app KEY=<API_KEY> bash scripts/smoke_jury.sh video1.mov video2.mov
 ```
 Проверяет: `POST /api/v1/analyze` (поле `file`) → `{"job_id","status":"processing"}`; `GET /api/v1/jobs/{id}` →
 `done` с `verdict`/`violations[]`, JPEG base64 без префикса `data:`, 1–3 кадра; время от загрузки до `done` ≤ 300 с;
