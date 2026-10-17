@@ -1,0 +1,68 @@
+"""Trained scoring layer: candidate features → (type_id, probability) pairs.
+
+With ~30 training videos and 1–5 examples per violation type, each violation type is decided by one strong,
+camera-independent feature with a *learned* threshold (max-margin decision stump, scripts/train_scorer.py).
+Kinds that have no positive training examples use conservative fixed rules.
+"""
+from __future__ import annotations
+
+import numpy as np
+
+# stump name → (candidate kind, feature, type_id, gates {feature: min value})
+STUMPS = {
+    "leave_screen": ("leave", "screen", "workstation_unlocked", {"max_d": 0.9, "end_gap": 0.5}),
+    "leave_items": ("leave", "unsecured", "left_cash_unattended", {"max_d": 0.9, "end_gap": 0.5}),
+    "entry_door": ("entry", "door_change", "door_left_open", {}),
+    "crowd_standing": ("crowd", "standing", "unauthorized_person", {}),
+    "drink_clip": ("drink", "clip", "food_drink", {}),
+}
+
+# kinds / patterns without positive training examples → conservative rules (p in 0..1)
+RULES = {
+    "crowd_n": ("crowd", "unauthorized_person",
+                lambda f: 0.75 if (f.get("n_max", 0) >= 3 and f.get("dur", 0) >= 2.0 and "standing" not in f) else 0.0),
+    "short_visit": ("short_visit", "count_not_in_client_presence",
+                    lambda f: 0.7 if f.get("dwell", 99) < 20 and f.get("max_d", 9) < 1.5 else 0.0),
+    "phone": ("phone", "phone_use",
+              lambda f: 0.7 if (f.get("prob", 0) >= 0.85 and f.get("persist", 0) >= 4 and f.get("clip", 0) >= 0.6) else 0.0),
+}
+
+
+def _gate_ok(f: dict, gates: dict) -> bool:
+    return all(f.get(k, 0.0) >= v for k, v in gates.items())
+
+
+def score(cand, model: dict) -> list[tuple[str, float]]:
+    """All (type_id, p) this candidate supports with p >= 0.5."""
+    out = []
+    for name, (kind, feat, type_id, gates) in STUMPS.items():
+        st = model.get("stumps", {}).get(name)
+        if kind != cand.kind or st is None or feat not in cand.f or not _gate_ok(cand.f, gates):
+            continue
+        p = 1.0 / (1.0 + np.exp(-(cand.f[feat] - st["thr"]) / st["scale"]))
+        if p >= 0.5:
+            out.append((type_id, float(p)))
+    for name, (kind, type_id, rule) in RULES.items():
+        if kind == cand.kind:
+            p = float(rule(cand.f))
+            if p >= 0.5:
+                out.append((type_id, p))
+    return out
+
+
+def fit_stump(pos: list[float], neg: list[float]) -> dict | None:
+    if not pos:
+        return None
+    pos, neg = np.array(pos, float), np.array(neg, float)
+    if len(neg) == 0:
+        thr = float(pos.min()) * 0.9
+        return {"thr": thr, "scale": max(abs(thr) * 0.05, 1e-3), "separable": True, "n_pos": len(pos), "n_neg": 0}
+    if pos.min() > neg.max():  # separable: max-margin threshold
+        thr = (pos.min() + neg.max()) / 2
+        gap = pos.min() - neg.max()
+        return {"thr": float(thr), "scale": float(max(gap / 4, 1e-3)), "separable": True,
+                "n_pos": len(pos), "n_neg": len(neg)}
+    cands = np.unique(np.concatenate([pos, neg]))
+    best = max(cands, key=lambda t: (pos >= t).mean() + (neg < t).mean())
+    sd = np.concatenate([pos, neg]).std() + 1e-6
+    return {"thr": float(best), "scale": float(sd / 4), "separable": False, "n_pos": len(pos), "n_neg": len(neg)}
