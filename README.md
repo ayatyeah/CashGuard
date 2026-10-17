@@ -220,3 +220,78 @@ go -C src/backend test ./internal/infrastructure -run TestPostgres -v
 
 
 Полный smoke-тест работающего Compose (PowerShell 7): `./smoke-compose.ps1`. Он использует API_KEY из .env, загружает синтетический тестовый файл в деморежиме, проверяет результат и запрет неверного ключа, затем удаляет только своё тестовое задание. Это проверка интеграции, а не качества AI или декодирования настоящего видео.
+
+### CashGuard / Forte UI preview
+
+The dashboard uses the Forte hero, CashGuard shield, and burgundy navigation accents.
+The banner's **New analysis** button opens the existing upload workflow. Russian,
+English, and Kazakh are supported. Brand SVG assets are bundled locally.
+
+For a lightweight local UI preview, set `POSTGRES_PASSWORD` and an `API_KEY` of at
+least 16 characters in `.env`, then run:
+
+```bash
+docker compose -p cashguard-ui -f compose.yaml -f compose.ui-preview.yaml up -d --build db backend
+cd src/frontend
+npm ci
+API_PROXY_TARGET=http://127.0.0.1:8081 npm run dev -- --port 3000 --strictPort
+```
+
+Open http://127.0.0.1:3000 and enter the `.env` API key in connection settings.
+The preview override explicitly enables demo mode: results are synthetic, not ML
+analysis. The normal production compose configuration is unchanged.
+
+The review workspace keeps the recording, event timeline, selected evidence, and
+rule reference together. Event markers seek the video; evidence opens in an
+accessible dialog. Saved recordings load on opening a review. Processing steps
+reflect the API's actual queued/processing/done states, without estimated progress.
+An empty dashboard shows a first-review guide instead of zero-value analytics.
+
+### Local dataset-backed UI fixtures
+
+`scripts/prepare_ui_dataset.py` builds eight completed UI jobs from training videos,
+organizer labels and the team's event annotations. It extracts real JPEG frames
+locally and makes browser-compatible MP4 copies. It does not run a model. All jobs
+are marked `demo` and `[DATASET TEST]`; dates are synthetic for dashboard testing.
+Generated media, jobs and provenance are kept in ignored `data/ui-fixtures/`.
+
+```bash
+# Requires PyYAML, ffmpeg and ffprobe.
+python scripts/prepare_ui_dataset.py --source /path/to/ForteWin --seed-local
+```
+
+Seeding requires the local demo stack `cashguard-ui`, retains existing jobs and
+uses stable fixture IDs. Without `--seed-local`, only files are generated.
+`manifest.json` records sources/checksums; `state-fixtures.json` contains separate
+queued/processing/failed snapshots for tests, not permanently running DB jobs.
+Rule references are copied from the project's rule catalog without revalidation.
+
+### Local web UI with the team's real model
+
+The local UI can use the existing Python environment and weights from a separate
+model checkout, without rebuilding a large ML container. The host API uses the
+same PostgreSQL database and API key; `DEMO_MODE` is forced to `false` by its launcher.
+
+```bash
+go -C src/backend build -o "$PWD/data/local-runtime/bin/cashguard-server" ./cmd/server
+python scripts/run_local_ml_server.py --model-root /path/to/ForteWin
+```
+
+The model checkout must have `.venv`, downloaded weights and `bin/cashguard-analyzer`.
+`local-model-adapter` translates the Go API's video/budget arguments into the current
+model launcher's single video argument and `ANALYZER_BUDGET_SEC` environment variable.
+Inference uses offline Hugging Face/Transformers mode, including local Qwen VLM.
+The API listens on `127.0.0.1:8081`; the Vite proxy continues using this address.
+For this workstation the managed services are `cashguard-ml-api` and `cashguard-ui-dev`:
+
+```bash
+systemctl --user status cashguard-ml-api cashguard-ui-dev
+journalctl --user -u cashguard-ml-api -n 80 --no-pager
+systemctl --user restart cashguard-ml-api
+```
+
+The preview Docker API is stopped while the host model API owns port 8081. PostgreSQL
+stays in Docker. Existing uploads were copied to `data/local-runtime/uploads`, and
+saved paths updated after verification; a metadata backup is in
+`data/local-runtime/jobs-before-local-ml.json`. Historical `[DATASET TEST]` and demo
+jobs retain their original labels. Only new uploads invoke the model.

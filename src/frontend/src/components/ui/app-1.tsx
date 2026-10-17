@@ -1,8 +1,9 @@
+import { ReviewWorkspace, FirstReview } from "./review-workspace";
+import { CashGuardHero } from "./cashguard-hero";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Activity,
-  ArrowDownToLine,
   ArrowRight,
   Clock3,
   FileVideo,
@@ -10,7 +11,6 @@ import {
   Loader2,
   LockKeyhole,
   Play,
-  Plus,
   Search,
   ShieldAlert,
   ShieldCheck,
@@ -36,8 +36,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/a
 import { App1Sidebar, type Page } from "@/components/ui/app-1-utils/app-1-sidebar";
 import { AccountDialog } from "./account-dialog";
 import { Preferences } from "./preferences";
-import { StoredVideo } from "./stored-video";
-import { api, ApiError, timecode, type Job } from "@/lib/api";
+import { api, ApiError, type Job } from "@/lib/api";
 import { formatDate } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
@@ -76,6 +75,7 @@ function Notice({ tone, icon, children, action }: { tone: "info" | "warning" | "
 export function App1() {
   const { token: key, t, locale, language, settingsError, invalidate } = useWorkspace();
   const [page, setPage] = useState<Page>("dashboard");
+  const [jobsLoaded, setJobsLoaded] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [keyDialog, setKeyDialog] = useState(false);
   const [error, setError] = useState("");
@@ -90,7 +90,6 @@ export function App1() {
   const [uploading, setUploading] = useState(false);
   const [drag, setDrag] = useState(false);
   const [localVideos, setLocalVideos] = useState<Record<string, string>>({});
-  const videoRef = useRef<HTMLVideoElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const statusLabel = (j: Job) =>
@@ -106,6 +105,7 @@ export function App1() {
 
   useEffect(() => {
     setJobs([]);
+    setJobsLoaded(false);
     setSelected(null);
     setFile(null);
     setConnected(false);
@@ -123,9 +123,9 @@ export function App1() {
           setConnected(true);
           setConnectionError("");
         }
-        if (!key) return;
+        if (!key) { if (!cancelled) setJobsLoaded(true); return; }
         const data = await api<Job[]>("/jobs", key);
-        if (!cancelled) setJobs(data);
+        if (!cancelled) { setJobs(data); setJobsLoaded(true); }
       } catch (e) {
         if (cancelled) return;
         setConnected(false);
@@ -167,7 +167,7 @@ export function App1() {
   });
   const chartConfig = {
     checked: { label: t("Проверено видео"), color: "hsl(var(--primary))" },
-    flagged: { label: t("Требуют проверки"), color: "hsl(var(--muted-foreground))" },
+    flagged: { label: t("Требуют проверки"), color: "hsl(var(--warning))" },
   } satisfies ChartConfig;
 
   const displayed = jobs.filter(
@@ -223,12 +223,14 @@ export function App1() {
   }
 
   function open(j: Job) {
+    window.scrollTo({ top: 0 });
     setPage("analysis");
     setSelected(j.job_id);
     setFile(null);
   }
 
   function startNew() {
+    window.scrollTo({ top: 0 });
     setPage("analysis");
     setSelected(null);
   }
@@ -241,7 +243,7 @@ export function App1() {
   ];
 
   const breakdown = [
-    { label: t("Без нарушений"), value: clean.length, bar: "[&>div]:bg-primary" },
+    { label: t("Без нарушений"), value: clean.length, bar: "[&>div]:bg-success-foreground" },
     { label: t("Требуют проверки"), value: flagged.length, bar: "[&>div]:bg-warning" },
     { label: t("Ошибка обработки"), value: failed.length, bar: "[&>div]:bg-destructive" },
     { label: t("В обработке"), value: active.length, bar: "[&>div]:bg-muted-foreground" },
@@ -264,7 +266,7 @@ export function App1() {
           <h1 className="truncate text-lg font-semibold">{page === "dashboard" ? t("Обзор проверок") : t("Анализ видео")}</h1>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <span className="mr-1 hidden items-center gap-2 text-xs text-muted-foreground lg:flex">
-              <span className={cn("size-2 rounded-full", connected ? "bg-primary" : "bg-muted-foreground/50")} aria-hidden />
+              <span className={cn("size-2 rounded-full", connected ? "bg-emerald-400" : "bg-muted-foreground/50")} aria-hidden />
               {connected ? t("Сервис подключён") : t("Нет подключения")}
             </span>
             <Preferences />
@@ -275,20 +277,12 @@ export function App1() {
         </header>
 
         <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4 sm:p-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+          {page === "dashboard" ? <CashGuardHero onAnalyze={startNew} /> : (
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("Видеоаналитика · безопасность")}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {page === "dashboard" ? t("Всё, что важно для контроля кассовых операций.") : t("Загрузите запись и проверьте наблюдаемые события.")}
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t(current ? "Просмотрите запись и проверьте найденные события." : "Загрузите запись и проверьте наблюдаемые события.")}</p>
             </div>
-            {page === "dashboard" && (
-              <Button onClick={startNew} className="gap-2">
-                <Plus className="size-4" />
-                {t("Новый анализ")}
-              </Button>
-            )}
-          </div>
+          )}
 
           {demo && (
             <Notice tone="warning" icon={<Activity />}>
@@ -326,10 +320,10 @@ export function App1() {
           )}
 
           {page === "dashboard" ? (
-            <>
+            !jobsLoaded ? <p role="status" className="text-sm text-muted-foreground">{t(connectionError ? "Не удалось загрузить проверки." : "Загрузка проверок…")}</p> : jobs.length === 0 ? <FirstReview onStart={startNew} /> : <>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {stats.map((stat) => (
-                  <Card key={stat.label}>
+                  <Card key={stat.label} className="cashguard-stat">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
                       <stat.icon aria-hidden className="size-5 text-muted-foreground" />
@@ -438,7 +432,7 @@ export function App1() {
             </>
           ) : (
             <>
-              <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+              {!current && <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">{t("Новая проверка")}</CardTitle>
@@ -510,114 +504,11 @@ export function App1() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </div>}
 
-              {current && (
-                <Card>
-                  <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-                    <div className="min-w-0 space-y-2">
-                      <CardDescription className="text-xs font-medium uppercase tracking-wider">{t("Результат проверки")}</CardDescription>
-                      <CardTitle className="break-words text-lg">{current.filename}</CardTitle>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={cn("font-medium", statusTone(current))}>{statusLabel(current)}</Badge>
-                        {current.demo && <Badge variant="outline">{t("ДЕМО")}</Badge>}
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      {current.status === "done" && (
-                        <Button variant="outline" size="sm" className="gap-2" onClick={() => report(current)}>
-                          <ArrowDownToLine className="size-4" />
-                          <span className="hidden sm:inline">{t("Скачать JSON")}</span>
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="icon" className="size-9" aria-label={t("Закрыть результат")} onClick={() => setSelected(null)}>
-                        <X className="size-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-4">
-                    {isActive(current) && (
-                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="size-4 animate-spin text-primary" />
-                        {current.status === "queued" ? t("Видео ожидает своей очереди.") : t("Идёт анализ видео. Это может занять несколько минут.")}
-                      </p>
-                    )}
-                    {current.error && <Notice tone="error" icon={<ShieldAlert />}>{t(current.error)}</Notice>}
-                    <StoredVideo key={current.job_id + key} id={current.job_id} localURL={localVideos[current.job_id]} videoRef={videoRef} />
-                    {current.status === "done" && current.verdict === "no_violation" && (
-                      <div className="flex gap-3 rounded-lg bg-success-soft p-4 text-success-foreground">
-                        <ShieldCheck className="size-6 shrink-0" />
-                        <div>
-                          <p className="font-medium">{t("Нарушение не обнаружено")}</p>
-                          <p className="mt-1 text-sm opacity-90">{t("В доступной записи не выявлено признаков возможных нарушений.")}</p>
-                        </div>
-                      </div>
-                    )}
-                    {current.status === "done" && current.verdict === "violation" && (
-                      <div className="flex gap-3 rounded-lg bg-warning-soft p-4 text-warning-foreground">
-                        <ShieldAlert className="size-6 shrink-0" />
-                        <div>
-                          <p className="font-medium">{t("Обнаружены признаки возможных нарушений")}</p>
-                          <p className="mt-1 text-sm opacity-90">{t("Проверьте каждое событие по кадрам и таймкоду.")}</p>
-                        </div>
-                      </div>
-                    )}
-                    {current.violations.map((v, i) => (
-                      <article key={i} className="rounded-lg border p-4">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="grid size-8 place-items-center rounded-md bg-warning-soft text-sm font-semibold tabular-nums text-warning-foreground">
-                            {String(i + 1).padStart(2, "0")}
-                          </span>
-                          <h3 className="min-w-0 flex-1 font-medium">{v.type}</h3>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 gap-1.5 tabular-nums"
-                            aria-label={`${t("Перейти к")} ${timecode(v.timecode_sec)}`}
-                            onClick={() => { if (videoRef.current) videoRef.current.currentTime = v.timecode_sec; }}
-                          >
-                            <Play className="size-3.5" />
-                            {timecode(v.timecode_sec)}
-                          </Button>
-                        </div>
-                        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{v.description}</p>
-                        {/* frames are often portrait (phone camera), so cap the height instead of stretching to the column */}
-                        <div className="mt-4 flex flex-wrap gap-3">
-                          {v.evidence_frames.map((frame, k) => (
-                            <figure key={k} className="m-0 max-w-full">
-                              <img
-                                className="h-56 w-auto max-w-full rounded-md border object-contain sm:h-72"
-                                src={`data:${frame.image_base64.startsWith("iVBOR") ? "image/png" : "image/jpeg"};base64,${frame.image_base64}`}
-                                alt={`${current.demo ? t("Синтетическая иллюстрация") : t("Кадр-доказательство")} ${timecode(frame.timestamp_sec)}`}
-                              />
-                              <figcaption className="mt-1.5 text-xs text-muted-foreground">
-                                {current.demo ? t("Демо-иллюстрация") : t("Кадр-доказательство")} · {timecode(frame.timestamp_sec)}
-                              </figcaption>
-                            </figure>
-                          ))}
-                        </div>
-                        <div className="mt-4 flex gap-2 border-t pt-3 text-xs text-muted-foreground">
-                          <ShieldCheck className="size-4 shrink-0 text-primary" />
-                          {v.rule ? (
-                            <span>
-                              {v.rule.title} · {v.rule.section}{" "}
-                              {/^https?:\/\//.test(v.rule.url) && (
-                                <a className="text-primary underline underline-offset-2" href={v.rule.url} target="_blank" rel="noreferrer">
-                                  {t("Открыть источник ↗")}
-                                </a>
-                              )}
-                            </span>
-                          ) : (
-                            <span>{t("Нормативный источник не предоставлен анализатором.")}</span>
-                          )}
-                        </div>
-                      </article>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
+              {current && <ReviewWorkspace key={current.job_id + key} job={current} localURL={localVideos[current.job_id]} onClose={() => { setSelected(null); requestAnimationFrame(() => document.getElementById("analysis-history")?.scrollIntoView({ block: "start" })); }} onNew={startNew} onReport={() => report(current)} />}
 
-              <Card className="overflow-hidden">
+              <Card id="analysis-history" className="scroll-mt-20 overflow-hidden">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     {t("История анализов")}

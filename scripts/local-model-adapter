@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Adapt Go's <video> <budget> contract to the team's one-argument Python launcher.
+set -euo pipefail
+: "CASHGUARD_MODEL_ROOT:?Set CASHGUARD_MODEL_ROOT to the local model checkout}"
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo 'usage: local-model-adapter <video> [budget-seconds]' >&2
+  exit 2
+fi
+budget="${2:-240}"
+if ! [[ "$budget" =~ ^[0-9]+$ ]] || (( budget < 1 )); then
+  echo 'budget must be a positive integer' >&2
+  exit 2
+fi
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1
+export ANALYZER_BUDGET_SEC="$budget"
+export CASHGUARD_PYTHON="${CASHGUARD_PYTHON:-$CASHGUARD_MODEL_ROOT/.venv/bin/python}"
+exec "$CASHGUARD_MODEL_ROOT/bin/cashguard-analyzer" "$1"
