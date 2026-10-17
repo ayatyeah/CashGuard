@@ -17,12 +17,15 @@ services:
       timeout: 3s
       retries: 20
   backend:
-    build: ./src/backend
+    build:
+      context: .
+      dockerfile: src/backend/Dockerfile.ml
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://cashguard:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/cashguard?sslmode=disable
       API_KEY: ${API_KEY:?Set API_KEY in .env}
-      DEMO_MODE: ${DEMO_MODE:-true}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      JOB_DEADLINE_SEC: ${JOB_DEADLINE_SEC:-285}
       DATA_DIR: /data
       ADDR: 0.0.0.0:8080
     volumes:
@@ -51,6 +54,16 @@ services:
       interval: 15s
       timeout: 3s
       retries: 5
+  # Public URL for the jury: `docker compose --profile public up -d`, the https://*.trycloudflare.com
+  # address is printed in `docker compose logs tunnel`. A quick tunnel gets a new address on every restart.
+  tunnel:
+    profiles: ["public"]
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "--url", "http://frontend:80"]
+    depends_on:
+      frontend:
+        condition: service_healthy
   migrate:
     profiles: ["tools"]
     build: ./src/backend

@@ -1,0 +1,11 @@
+# Build context for src/backend/Dockerfile.ml: only what the image needs.
+*
+!app/
+!scripts/
+!bin/
+!models/*.json
+!requirements-ml.txt
+!src/backend/
+src/backend/data/
+**/__pycache__/
+**/*.pyc
