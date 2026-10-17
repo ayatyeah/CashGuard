@@ -4,7 +4,17 @@ Datathon 26, кейс ForteBank. Сервис принимает видео (.mo
 находит визуально наблюдаемые признаки возможных нарушений и возвращает тип, таймкод, кадры-доказательства,
 описание и ссылку на норматив РК. План стека и API — `STACK.md`.
 
-> Статус: в разработке. Готово: анализ данных, таксономия нарушений, справочник нормативов.
+> Статус: в разработке. Готово: анализ данных, таксономия нарушений, справочник нормативов,
+> ML-анализатор (`app/analyzers/ml.py`, обученные модели в `models/*.json`). Подробно — `docs/ml_model.md`.
+
+## Быстрый запуск ML-анализатора
+```bash
+uv venv --python 3.11 .venv
+uv pip install --python .venv/bin/python -r requirements-ml.txt --extra-index-url https://download.pytorch.org/whl/cpu
+bash scripts/download_models.sh                       # веса (Apache-2.0/MIT), один раз
+.venv/bin/python scripts/analyze_video.py video.mov    # JSON в формате API жюри
+```
+В сервисе: `ANALYZER=ml` → `from app.analyzers.ml import MLAnalyzer` (интерфейс STACK.md §4).
 
 ## Данные
 Датасет **не хранится в репозитории** (условия хакатона: данные только для использования в рамках хакатона).
@@ -21,6 +31,11 @@ Datathon 26, кейс ForteBank. Сервис принимает видео (.mo
 | `docs/violations_train.md` | сводка типов нарушений и наблюдения о разметке |
 | `docs/train_timelines.md` | покадровые таймлайны всех train-видео и признаки «норма vs нарушение» |
 | `docs/normative_sources.md` | документы НБРК/АРРФР, сопоставление тип → пункт, пробелы в нормативке |
+| `docs/ml_model.md` | архитектура ML, модели и лицензии, обучение, метрики, ограничения |
+| `app/ml/` | восприятие, сцена, кандидаты событий, скорер, пайплайн |
+| `app/analyzers/ml.py` | `MLAnalyzer` — точка подключения к сервису |
+| `models/track_model.json`, `models/scorer.json` | обученные модели (веса детекторов — `scripts/download_models.sh`) |
+| `scripts/` | извлечение признаков, обучение (`train_tracks.py`, `train_scorer.py`), оценка, CLI |
 
 
 
