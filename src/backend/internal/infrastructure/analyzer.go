@@ -68,6 +68,7 @@ func (a CommandAnalyzer) Analyze(ctx context.Context, j domain.Job) (domain.Job,
 	}
 	j.Verdict = result.Verdict
 	j.Violations = result.Violations
+	j.Warnings = result.Warnings
 	if j.Violations == nil {
 		j.Violations = []domain.Violation{}
 	}

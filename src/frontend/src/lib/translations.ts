@@ -606,3 +606,9 @@ export function translate(text:string,language:Language):string {if(errors[text]
 export function formatDate(date:Date,language:Language,withTime=false){if(language==='kk'){const months=['қаң.','ақп.','нау.','сәу.','мам.','мау.','шіл.','там.','қыр.','қаз.','қар.','жел.'];return date.getDate()+' '+months[date.getMonth()]+(withTime?', '+date.getHours().toString().padStart(2,'0')+':'+date.getMinutes().toString().padStart(2,'0'):'')}return date.toLocaleString(language==='en'?'en-US':'ru-RU',{day:'numeric',month:'short',...(withTime?{hour:'2-digit',minute:'2-digit'} as const:{})});}
 // App1 dashboard layout (shadcn) strings
 Object.assign(dictionary,{"Видео":["Video","Бейне"],"Видеоаналитика · безопасность":["Video analytics · security","Бейнеаналитика · қауіпсіздік"],"Дата загрузки":["Uploaded","Жүктелген күні"],"Обнаружены признаки возможных нарушений":["Signs of possible violations detected","Ықтимал бұзушылық белгілері анықталды"],"От видео к решению":["From video to decision","Бейнеден шешімге дейін"],"Перейти к":["Jump to","Өту"],"Проверьте каждое событие по кадрам и таймкоду.":["Review each event by its frames and timecode.","Әр оқиғаны кадрлар мен уақыт белгісі бойынша тексеріңіз."],"Распределение всех проверок по результату":["All reviews by outcome","Барлық тексерулердің нәтиже бойынша бөлінуі"],"Результат проверки":["Review result","Тексеру нәтижесі"],"События":["Events","Оқиғалар"],"Статус":["Status","Күйі"],"Фильтр":["Filter","Сүзгі"]});
+
+Object.assign(dictionary, {
+  'Ограничения анализа': ['Analysis limitations', 'Талдау шектеулері'],
+  'Учитывайте ограничения при проверке результата.': ['Consider these limitations when reviewing the result.', 'Нәтижені тексергенде осы шектеулерді ескеріңіз.'],
+  'Результат получен с ограничениями и требует ручной проверки.': ['The result has limitations and needs manual review.', 'Нәтиже шектеулермен алынған және қолмен тексеруді қажет етеді.'],
+});

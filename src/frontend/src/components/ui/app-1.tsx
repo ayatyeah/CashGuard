@@ -44,12 +44,13 @@ import { useWorkspace } from "@/lib/workspace";
 type Filter = "all" | "flagged" | "active" | "clean";
 
 const isActive = (j: Job) => j.status === "queued" || j.status === "processing";
+const needsReview = (j: Job) => j.status === "done" && (j.verdict === "violation" || !!j.warnings?.length);
 
 // One colour per verdict across the whole UI: amber = needs review, green = clean, red = failed.
 function statusTone(j: Job) {
   if (j.status === "failed") return "border-transparent bg-destructive-soft text-destructive";
   if (isActive(j)) return "border-transparent bg-secondary text-secondary-foreground";
-  return j.verdict === "violation"
+  return needsReview(j)
     ? "border-transparent bg-warning-soft text-warning-foreground"
     : "border-transparent bg-success-soft text-success-foreground";
 }
@@ -99,7 +100,7 @@ export function App1() {
         ? t("В очереди")
         : j.status === "processing"
           ? t("Анализируется")
-          : j.verdict === "violation"
+          : needsReview(j)
             ? t("Требует проверки")
             : t("Без нарушений");
 
@@ -152,8 +153,8 @@ export function App1() {
   }, [file]);
 
   const done = jobs.filter((j) => j.status === "done");
-  const flagged = done.filter((j) => j.verdict === "violation");
-  const clean = done.filter((j) => j.verdict === "no_violation");
+  const flagged = done.filter(needsReview);
+  const clean = done.filter((j) => j.verdict === "no_violation" && !needsReview(j));
   const failed = jobs.filter((j) => j.status === "failed");
   const active = jobs.filter(isActive);
   const current = jobs.find((j) => j.job_id === selected);
@@ -163,7 +164,7 @@ export function App1() {
     const date = new Date();
     date.setDate(date.getDate() - 6 + i);
     const day = done.filter((j) => new Date(j.created_at).toDateString() === date.toDateString());
-    return { day: formatDate(date, language), checked: day.length, flagged: day.filter((j) => j.verdict === "violation").length };
+    return { day: formatDate(date, language), checked: day.length, flagged: day.filter(needsReview).length };
   });
   const chartConfig = {
     checked: { label: t("Проверено видео"), color: "hsl(var(--primary))" },
@@ -174,9 +175,9 @@ export function App1() {
     (j) =>
       j.filename.toLowerCase().includes(search.toLowerCase()) &&
       (filter === "all" ||
-        (filter === "flagged" && j.verdict === "violation") ||
+        (filter === "flagged" && needsReview(j)) ||
         (filter === "active" && isActive(j)) ||
-        (filter === "clean" && j.verdict === "no_violation")),
+        (filter === "clean" && j.verdict === "no_violation" && !needsReview(j))),
   );
 
   function choose(f?: File) {

@@ -42,10 +42,11 @@ export function ReviewWorkspace({ job, localURL, onClose, onNew, onReport }: { j
     </div>
     {active && <ProcessingState status={job.status} />}
     {job.status === 'failed' && <div className="review-verdict failed" role="alert"><ShieldAlert/><div><strong>{t('Ошибка обработки')}</strong><p>{t(job.error || 'Попробуйте загрузить видео ещё раз.')}</p></div></div>}
-    {job.status === 'done' && <div className={`review-verdict ${job.verdict === 'violation' ? 'flagged' : 'clean'}`}>
-      {job.verdict === 'violation' ? <ShieldAlert/> : <ShieldCheck/>}
+    {job.status === 'done' && !!job.warnings?.length && <div className="review-verdict flagged" role="status"><ShieldAlert/><div><strong>{t('Ограничения анализа')}</strong><ul>{job.warnings.map((warning, i) => <li key={i}>{warning}</li>)}</ul><p>{t('Учитывайте ограничения при проверке результата.')}</p></div></div>}
+    {job.status === 'done' && <div className={`review-verdict ${job.verdict === 'violation' || job.warnings?.length ? 'flagged' : 'clean'}`}>
+      {job.verdict === 'violation' || job.warnings?.length ? <ShieldAlert/> : <ShieldCheck/>}
       <div><strong>{t(job.verdict === 'violation' ? 'Обнаружены признаки возможных нарушений' : 'Нарушение не обнаружено')}</strong>
-        <p>{t(job.verdict === 'violation' ? 'Проверьте каждое событие по кадрам и таймкоду.' : 'В доступной записи не выявлено признаков возможных нарушений.')}</p></div>
+        <p>{t(job.verdict === 'violation' ? 'Проверьте каждое событие по кадрам и таймкоду.' : job.warnings?.length ? 'Результат получен с ограничениями и требует ручной проверки.' : 'В доступной записи не выявлено признаков возможных нарушений.')}</p></div>
       {job.verdict === 'violation' && <span className="review-count">{job.violations.length}</span>}
     </div>}
     <div className="review-grid">

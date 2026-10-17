@@ -250,7 +250,6 @@ RUNNER = textwrap.dedent(r'''
 
     DETS = {
         "mixed": [Detection("phone_use", 300, [300, 310, 320, 330], ev("phone_use", 12.0), 0.9),
-                  Detection("door_left_open", 600, [-1, -2], ev("door_left_open", 24.0), 0.8),
                   Detection("unknown_review", 50, [50], ev("unknown_review", 2.0), 0.6)],
         "all_dropped": [Detection("food_drink", 100, [-1], ev("food_drink", 4.0), 0.7)],
         "none": [],
@@ -274,12 +273,12 @@ RUNNER = textwrap.dedent(r'''
 ''')
 
 
-def run_launcher(tmp_path, scenario):
+def run_launcher(tmp_path, scenario, success=True):
     runner = tmp_path / "runner.py"
     runner.write_text(RUNNER)
     env = dict(os.environ, OMP_NUM_THREADS="1", PYTHONDONTWRITEBYTECODE="1")
     p = subprocess.run([sys.executable, str(runner), ROOT, scenario], capture_output=True, timeout=60, env=env)
-    assert p.returncode == 0, p.stderr.decode(errors="replace")[-3000:]
+    assert (p.returncode == 0) == success, p.stderr.decode(errors="replace")[-3000:]
     return p
 
 
@@ -289,7 +288,8 @@ def test_launcher_end_to_end_mixed(tmp_path, norms):
     assert b"library noise" in p.stderr and b"library noise" not in p.stdout
     assert res["verdict"] == "violation"
     vs = res["violations"]
-    assert len(vs) == 2                  # door_left_open dropped: none of its frames could be read
+    assert len(vs) == 2
+    assert res["warnings"] == ["w"]
     phone, unknown = vs
     assert phone["type"] == norms["phone_use"]["title"]
     assert phone["timecode_sec"] == 12.0                       # frame 300 / 25 fps
@@ -300,7 +300,11 @@ def test_launcher_end_to_end_mixed(tmp_path, norms):
     assert unknown["type"] == norms["unknown_review"]["title"]
 
 
-@pytest.mark.parametrize("scenario", ["all_dropped", "none"])
-def test_launcher_end_to_end_no_violation(tmp_path, scenario):
-    res = go_validate(run_launcher(tmp_path, scenario).stdout)
-    assert res == {"status": "done", "verdict": "no_violation", "violations": []}
+def test_launcher_end_to_end_no_violation(tmp_path):
+    res = go_validate(run_launcher(tmp_path, "none").stdout)
+    assert res == {"status": "done", "verdict": "no_violation", "violations": [], "warnings": ["w"]}
+
+
+def test_launcher_missing_evidence_fails(tmp_path):
+    p = run_launcher(tmp_path, "all_dropped", success=False)
+    assert not p.stdout  # Never turn a lost detection into a clean verdict.
