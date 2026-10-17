@@ -33,7 +33,7 @@ class MLAnalyzer:
             self.clip = None
         self.models = pipeline.Models()
         self.vlm = None
-        if os.environ.get("FORTE_USE_VLM", "1") == "1" and pipeline.uses_vlm(self.models):
+        if os.environ.get("FORTE_USE_VLM", "0") == "1" and pipeline.uses_vlm(self.models):
             try:
                 from app.ml.vlm import VLM
                 self.vlm = VLM(threads=threads)

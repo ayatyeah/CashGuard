@@ -46,7 +46,7 @@
    "separable": true,
    "n_pos": 1,
    "n_neg": 0,
-   "enabled": true
+   "enabled": false
   },
   "vlm_cup_or_food_on_desk": {
    "thr": 1.0,
@@ -62,7 +62,7 @@
    "separable": true,
    "n_pos": 1,
    "n_neg": 0,
-   "enabled": true
+   "enabled": false
   },
   "vlm_client_gives_bag": {
    "thr": 0.9,
@@ -70,7 +70,7 @@
    "separable": true,
    "n_pos": 1,
    "n_neg": 0,
-   "enabled": true
+   "enabled": false
   },
   "vlm_cash_left_on_desk": {
    "thr": 1.0,
