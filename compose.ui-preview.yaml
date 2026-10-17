@@ -1,0 +1,8 @@
+# Lightweight local backend for reviewing the UI; no ML model downloads.
+services:
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    environment:
+      DEMO_MODE: "true"

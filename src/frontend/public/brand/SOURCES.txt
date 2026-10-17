@@ -1,0 +1,4 @@
+CashGuard / Forte service concept.
+Forte F geometry: https://forte.kz/ru (retrieved 2026-10-17).
+CashGuard shield and hero treatment: custom project design.
+Both SVG assets are local, with no external fonts or image dependencies.

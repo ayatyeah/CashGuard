@@ -27,11 +27,10 @@ export function App1Sidebar({
 
   return (
     <Sidebar title={t("Рабочее пространство")}>
-      <div className="flex h-16 shrink-0 items-center gap-2.5 border-b px-5">
-        {/* light tile with the dark mark, like the reference brand block */}
-        <img src="/brand/CashGuard_logo.svg" alt="" className="size-8 rounded-lg" />
-        <span className="text-lg font-semibold tracking-tight">CashGuard</span>
-      </div>
+      <button type="button" onClick={() => go("dashboard")} className="cashguard-brand" aria-label={t("Обзор проверок")}>
+        <img src="/brand/cashguard-forte.svg" alt="" width="38" height="38" />
+        <span><strong>Cash<span>Guard</span></strong><small>FORTE · {t("Кассовый контроль")}</small></span>
+      </button>
 
       <nav className="flex flex-col gap-1 p-3">
         <p className="px-3 pb-2 pt-1 text-xs font-medium text-muted-foreground">{t("Рабочее пространство")}</p>

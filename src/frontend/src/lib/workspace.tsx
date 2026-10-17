@@ -10,7 +10,7 @@ function useWorkspaceState(){
  function invalidate(){sessionStorage.removeItem('cashguard-api-key');setToken('')}
  function connect(value:string){sessionStorage.setItem('cashguard-api-key',value);setToken(value)}
  useEffect(()=>{sessionStorage.removeItem('cashguard-session');let stopped=false;if(token)api('/jobs',token).catch(e=>{if(!stopped&&e instanceof ApiError&&e.status===401)invalidate()});return()=>{stopped=true}},[token]);
- useEffect(()=>{localStorage.removeItem('cashguard-theme');const icon=document.querySelector<HTMLLinkElement>('link[rel="icon"]');if(icon)icon.href='/brand/CashGuard_logo.svg'},[]);
+ useEffect(()=>{localStorage.removeItem('cashguard-theme');const icon=document.querySelector<HTMLLinkElement>('link[rel="icon"]');if(icon)icon.href='/brand/cashguard-forte.svg'},[]);
  useEffect(()=>{document.documentElement.lang=language;document.title=translate('CashGuard — контроль кассовых операций',language);localStorage.setItem('cashguard-language',language)},[language]);
  async function preferences(nextLanguage:Language){setLanguage(nextLanguage)}
  return {language,theme,token,ready:true,saving:false,settingsError:'',t,preferences,connect,invalidate,locale:language==='kk'?'kk-KZ':language==='en'?'en-US':'ru-RU'};
