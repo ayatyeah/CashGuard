@@ -343,7 +343,7 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
         if not vals:
             continue
         door_min = float(np.min(vals))
-        te = t_in + 3.0  # organisers' convention: the moment the person walks away leaving the door open
+        te = t_in + 4.0  # organisers' convention: the person walks away leaving the door open (X-32 5 s, X-33 6 s)
         ie = _idx(scene, te)
         cands.append(Cand("entry", te, ie, [_idx(scene, t_in + 1.0), ie, _idx(scene, t_in + 7.0)],
                           {"door_change": float(np.median(vals)), "door_min": door_min, "dur": float(tr.t[-1] - tr.t[0]),
