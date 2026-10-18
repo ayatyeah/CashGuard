@@ -31,3 +31,8 @@ src/backend/data/
 # VLM answers computed on the Mac (small JSON, tracked)
 !artifacts/
 _env
+
+# API results embed dataset frames (base64) — never publish
+artifacts/**/api-result.json
+# submission form materials (contain the jury API key)
+submission/
