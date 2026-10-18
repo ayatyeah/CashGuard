@@ -145,13 +145,18 @@ def test_score_rules_crowd():
     # visitor-track crowd candidates carry "standing": the rule is skipped, only the stump decides
     # the stump uses "persist" (min/max height ratio ≈ 1 when the visitor never sits down)
     assert S.score(cand("crowd", n_max=3.0, dur=5.0, standing=0.9, persist=0.55), MODEL) == []
-    assert types(S.score(cand("crowd", n_max=3.0, dur=5.0, standing=0.9, persist=0.9), MODEL)) == ["unauthorized_person"]
+    assert types(S.score(cand("crowd", n_max=3.0, dur=5.0, standing=0.9, persist=0.9, brief=1.0), MODEL)) == ["unauthorized_person"]
+    # a long seated visit seen from above (sitting height ≈ standing height) is not "never sat"
+    assert S.score(cand("crowd", n_max=3.0, dur=40.0, standing=0.9, persist=0.9, brief=0.0), MODEL) == []
 
 
 def test_score_rules_short_visit_and_phone():
     assert S.score(cand("short_visit", dwell=10.0, max_d=1.0), {}) == [("count_not_in_client_presence", 0.7)]
     assert S.score(cand("short_visit", dwell=30.0, max_d=1.0), {}) == []
     assert S.score(cand("short_visit", dwell=10.0, max_d=2.0), {}) == []
+    # a fragment of a seated client's track ends at the desk → not a departure
+    assert S.score(cand("short_visit", dwell=10.0, max_d=0.7, dend=0.75), {}) == []
+    assert S.score(cand("short_visit", dwell=16.1, max_d=0.71, dend=1.10), {}) == [("count_not_in_client_presence", 0.7)]
     assert S.score(cand("phone", prob=0.9, persist=5.0, clip=0.7), {}) == [("phone_use", 0.7)]
     assert S.score(cand("phone", prob=0.9, persist=5.0, clip=0.1), {}) == []
 

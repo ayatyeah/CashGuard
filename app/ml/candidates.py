@@ -28,7 +28,7 @@ DEFAULT_TYPE = {
 }
 FEATS = ["rem", "max_d", "end_gap", "end_score", "screen", "items", "desk_probe", "light_drop", "door_change",
          "n_max", "dur", "dwell", "standing", "prob", "count", "near_hand", "persist", "clip", "door_min", "tidy", "unsecured", "desk_change", "desk_blob", "safe_change",
-         "persistent_change", "zncc_change", "small_residual", "client_remains", "owl_item", "owl_key"]
+         "persistent_change", "zncc_change", "small_residual", "client_remains", "owl_item", "owl_key", "brief", "dend"]
 
 
 @dataclass
