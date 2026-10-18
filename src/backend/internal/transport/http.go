@@ -129,7 +129,7 @@ func upload(c *gin.Context, s *usecase.Service, uploads, field string, done func
 	header := make([]byte, 512)
 	n, _ := f.Read(header)
 	mime := http.DetectContentType(header[:n])
-	if !strings.HasPrefix(mime, "video/") && !(n > 12 && string(header[4:8]) == "ftyp") {
+	if !strings.HasPrefix(mime, "video/") && !isISOBMFF(header[:n]) {
 		c.JSON(400, gin.H{"error": "Файл не является поддерживаемым видео"})
 		return
 	}
@@ -177,4 +177,16 @@ func juryResult(j domain.Job) gin.H {
 		out["status"] = "processing"
 	}
 	return out
+}
+
+// isISOBMFF accepts MP4/MOV files whose first atom is not ftyp (older QuickTime: moov/mdat/wide/free/skip first).
+func isISOBMFF(h []byte) bool {
+	if len(h) < 12 {
+		return false
+	}
+	switch string(h[4:8]) {
+	case "ftyp", "moov", "mdat", "wide", "free", "skip", "pnot":
+		return true
+	}
+	return false
 }

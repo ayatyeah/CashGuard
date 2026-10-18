@@ -31,6 +31,17 @@ def frame_b64(path: str, frame_id: int, max_side: int = 1280) -> str:
             img = im
             break
     cap.release()
+    if img is None and frame_id > 0:
+        # seeking fails on some containers; sequential decoding works on any file that decodes at all
+        cap = cv2.VideoCapture(path)
+        i = 0
+        while i <= frame_id and cap.grab():
+            if i >= frame_id - 12:
+                ok, im = cap.retrieve()
+                if ok and im is not None:
+                    img = im
+            i += 1
+        cap.release()
     if img is None:
         return ""
     s = max_side / max(img.shape[:2])

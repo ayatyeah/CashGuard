@@ -62,6 +62,13 @@ func (s *Service) worker() {
 		if created, e := time.Parse(time.RFC3339Nano, j.Created); e == nil {
 			deadline = created.Add(s.Deadline)
 		}
+		// Fair share: jobs uploaded together must all finish within their own 5 minutes, so the current job
+		// may use only its share of the remaining time (sequential uploads keep the full deadline).
+		if waiting := len(s.queue); waiting > 0 {
+			if share := time.Now().Add(time.Until(deadline) / time.Duration(1+waiting)); share.Before(deadline) {
+				deadline = share
+			}
+		}
 		var result domain.Job
 		var e error
 		if time.Until(deadline) < MinBudget {

@@ -54,8 +54,16 @@ def main() -> int:
         if n.get("source_verified") and n.get("document"):
             v["rule"] = {"title": n["document"], "section": n["clause"], "url": n.get("url", "")}
         violations.append(v)
+    # "Low time" notes matter only when sampling fell below 1 frame/s (short actions may be missed);
+    # above that they are informational and must not turn a clean result into "needs review".
+    step = (res.timings or {}).get("step") or 1
+    eff = fps / max(1, int(step))
+    warnings = [w for w in res.warnings if not w.startswith("мало времени")]
+    if eff < 1.0 and len(warnings) < len(res.warnings):
+        warnings.insert(0, f"мало времени: кадры анализировались с частотой {eff:.1f}/с — "
+                           f"действия короче {2 / eff:.0f} с могли быть пропущены")
     out = {"status": "done", "verdict": "violation" if violations else "no_violation",
-           "violations": violations, "warnings": res.warnings}
+           "violations": violations, "warnings": warnings}
     print(f"timings={res.timings} warnings={res.warnings}", file=sys.stderr)
     os.write(_REAL_STDOUT, json.dumps(out, ensure_ascii=False, allow_nan=False).encode())
     return 0

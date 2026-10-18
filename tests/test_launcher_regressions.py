@@ -26,6 +26,9 @@ class Analyzer:
         assert 0 < budget <= 10, budget
         detections = [] if scenario == 'clean' else [NS(
             evidence_frame_ids=[1], frame_id=1, type_id='event', description='observed')]
+        if scenario in ('slow', 'brisk'):  # sampling 25/60 = 0.4 fps vs 25/15 = 1.7 fps
+            return NS(detections=[], warnings=['мало времени: частота кадров снижена'],
+                      timings={'step': 60 if scenario == 'slow' else 15})
         return NS(detections=detections, warnings=['partial analysis'], timings={})
 module('app.analyzers.ml', MLAnalyzer=Analyzer)
 module('app.ml.perception', video_meta=lambda path: {'fps': 25})
@@ -49,6 +52,13 @@ class LauncherRegressionTests(unittest.TestCase):
                 payload = json.loads(result.stdout)
                 self.assertEqual(payload['warnings'], ['partial analysis'])
                 self.assertEqual(payload['verdict'], 'no_violation' if scenario == 'clean' else 'violation')
+
+    def test_low_fps_warning_only_below_one_frame_per_second(self):
+        slow = json.loads(self.launch('slow').stdout)
+        self.assertEqual(len(slow['warnings']), 1)
+        self.assertIn('0.4/с', slow['warnings'][0])
+        brisk = json.loads(self.launch('brisk').stdout)
+        self.assertEqual(brisk.get('warnings'), [])
 
     def test_missing_evidence_never_returns_clean_result(self):
         result = self.launch('missing')
