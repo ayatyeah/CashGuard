@@ -48,7 +48,8 @@ def main() -> int:
         frames = [f for f in frames if f["image_base64"]]
         if not frames:
             raise RuntimeError("не удалось получить кадры найденного события")
-        v = {"type": pipeline.title(d.type_id, an.models.norms), "timecode_sec": round(d.frame_id / fps, 1),
+        v = {"type": pipeline.title(d.type_id, an.models.norms), "type_id": d.type_id,
+             "timecode_sec": round(d.frame_id / fps, 1),
              "description": d.description, "evidence_frames": frames}
         n = an.models.norms.get(d.type_id) or {}
         if n.get("source_verified") and n.get("document"):

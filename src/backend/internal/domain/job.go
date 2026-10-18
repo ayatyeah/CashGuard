@@ -18,6 +18,7 @@ type Rule struct {
 }
 type Violation struct {
 	Type        string  `json:"type"`
+	TypeID      string  `json:"type_id,omitempty"` // stable latin key of the violation type (app/rules/norms.yaml)
 	Timecode    float64 `json:"timecode_sec"`
 	Description string  `json:"description"`
 	Frames      []Frame `json:"evidence_frames"`
