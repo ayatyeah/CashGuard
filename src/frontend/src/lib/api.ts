@@ -1,5 +1,5 @@
 export type Violation={type:string;timecode_sec:number;description:string;evidence_frames:{timestamp_sec:number;image_base64:string}[];rule?:{title:string;section:string;url:string}};
-export type Job={job_id:string;status:'queued'|'processing'|'done'|'failed';verdict?:'violation'|'no_violation';violations:Violation[];filename:string;created_at:string;error?:string;demo:boolean};
+export type Job={job_id:string;status:'queued'|'processing'|'done'|'failed';verdict?:'violation'|'no_violation';violations:Violation[];warnings?:string[];filename:string;created_at:string;error?:string;demo:boolean};
 export async function api<T>(path:string,key:string,options:RequestInit={}):Promise<T>{
  let r:Response;try{r=await fetch('/api'+path,{...options,headers:{...options.headers,...(key?{'X-API-Key':key}:{})}})}catch{throw new ApiError('network_error',0)}
  if(r.status===204)return undefined as T;

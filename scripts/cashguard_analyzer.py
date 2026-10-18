@@ -7,6 +7,7 @@ stdout: the completed result JSON only; all logs go to stderr; exit code 0 on su
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 import time
@@ -34,7 +35,9 @@ def main() -> int:
     an = MLAnalyzer()
     meta = video_meta(path)
     budget = float(sys.argv[2] if len(sys.argv) == 3 else os.environ.get("ANALYZER_BUDGET_SEC", "240"))
-    budget = max(25.0, budget - (time.time() - T0))  # model loading above counts against the same deadline
+    budget -= time.time() - T0  # Never manufacture time after model loading.
+    if not math.isfinite(budget) or budget <= 0:
+        raise RuntimeError("не осталось времени на анализ после загрузки модели")
     print(f"budget {budget:.0f}s after {time.time() - T0:.0f}s of startup", file=sys.stderr)
     res = an.analyze(path, meta, budget)
     fps = meta["fps"] or 30.0
@@ -44,14 +47,15 @@ def main() -> int:
                   for f in d.evidence_frame_ids[:3]]
         frames = [f for f in frames if f["image_base64"]]
         if not frames:
-            continue
+            raise RuntimeError("не удалось получить кадры найденного события")
         v = {"type": pipeline.title(d.type_id, an.models.norms), "timecode_sec": round(d.frame_id / fps, 1),
              "description": d.description, "evidence_frames": frames}
         n = an.models.norms.get(d.type_id) or {}
         if n.get("source_verified") and n.get("document"):
             v["rule"] = {"title": n["document"], "section": n["clause"], "url": n.get("url", "")}
         violations.append(v)
-    out = {"status": "done", "verdict": "violation" if violations else "no_violation", "violations": violations}
+    out = {"status": "done", "verdict": "violation" if violations else "no_violation",
+           "violations": violations, "warnings": res.warnings}
     print(f"timings={res.timings} warnings={res.warnings}", file=sys.stderr)
     os.write(_REAL_STDOUT, json.dumps(out, ensure_ascii=False, allow_nan=False).encode())
     return 0

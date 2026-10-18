@@ -29,6 +29,7 @@ type Job struct {
 	Status     string      `json:"status"`
 	Verdict    string      `json:"verdict,omitempty"`
 	Violations []Violation `json:"violations"`
+	Warnings   []string    `json:"warnings,omitempty"`
 	Filename   string      `json:"filename"`
 	Created    string      `json:"created_at"`
 	Error      string      `json:"error,omitempty"`
