@@ -25,8 +25,8 @@ for y in range(h):
 im.save(A/'hero-bg.jpg',quality=95)
 P=Presentation();P.slide_width=Inches(16);P.slide_height=Inches(9)
 P.core_properties.title='CashGuard — от видео к проверяемому событию'
-P.core_properties.subject='ForteWin / кейс ForteBank / Datathon 2026'
-P.core_properties.author='ForteWin'
+P.core_properties.subject='YeahGrinders / кейс ForteBank / Datathon 2026'
+P.core_properties.author='YeahGrinders'
 C={'bg':'0B0B0E','panel':'17151B','line':'342831','text':'FAF8FA','muted':'B5A8B4','pink':'EFA7C6','accent':'B91B5C','green':'8BD6AC','amber':'E8BB77'}
 notes=[]
 def rect(s,x,y,w,h,fill='panel',line=None,radius=True):
@@ -52,7 +52,7 @@ def base(kicker,title=None,sub=None,hero=False):
  pic(s,'cashguard-forte.png',.62,.42,.42,.42);txt(s,'CashGuard',1.16,.43,2.2,.4,17,bold=True)
  txt(s,kicker.upper(),4.1,.48,10.9,.35,11,'pink')
  rect(s,.65,8.47,14.7,.012,'line',radius=False)
- txt(s,'FORTEWIN  /  КЕЙС FORTEBANK',.65,8.65,9,.22,9,'muted')
+ txt(s,'YEAHGRINDERS  /  КЕЙС FORTEBANK',.65,8.65,9,.22,9,'muted')
  txt(s,f'{len(P.slides):02d}',14.8,8.61,.6,.28,11,'pink')
  if title:
   title_box=txt(s,title,.7,1.35,14.5,1.3,35 if '\n' in title else 37,bold=True)
@@ -82,7 +82,7 @@ pic(s,'forte-hero.png',11.6,1.4,3.3)
 txt(s,'CashGuard',.8,2.05,10,1.35,76,bold=True)
 txt(s,'Нарушение кассира —\nс кадром, таймкодом и нормой РК',.85,3.7,10.6,1.9,37,bold=True)
 txt(s,'Локальный ИИ без облака и без ложных тревог на нормальных видео.\nРаботает сейчас: fortecashguard.up.railway.app',.87,6.12,11,1.05,20,'pink')
-rect(s,.87,7.5,3.35,.49,'accent');txt(s,'КОМАНДА FORTEWIN',1.1,7.61,3,.3,11,bold=True)
+rect(s,.87,7.5,3.35,.49,'accent');txt(s,'КОМАНДА YEAHGRINDERS',1.1,7.61,3,.3,11,bold=True)
 note(s,'15 секунд. CashGuard анализирует запись кассы и выдаёт не просто «нарушение», а проверяемую карточку: что видно, когда, на каких кадрах и какой пункт норматива РК к этому относится. Всё работает локально, сервис уже доступен по публичному адресу.','SUBMISSION.md; https://fortecashguard.up.railway.app/about.html')
 
 # 2 ─ three results
@@ -196,6 +196,6 @@ rect(s,.8,3.2,7.05,4.6,line='line');rect(s,8.12,3.2,7.05,4.6,line='line')
 txt(s,left,1.1,3.5,6.5,4.1,18);txt(s,right,8.42,3.5,6.5,4.1,18)
 note(s,'Резерв. 11 типов на рабочем стенде; ещё 3 — со стендом визуально-языковой модели; для остальных типов подготовлены нормы. Действия рук с деньгами пока не распознаются.','docs/violation_types.md; scripts/make_about.py')
 
-P.save(ROOT/'CashGuard_ForteWin.pptx')
+P.save(ROOT/'CashGuard_YeahGrinders.pptx')
 (ROOT/'speaker-notes.txt').write_text('\n\n'+'\n\n'.join(notes),encoding='utf-8')
 print(f'Saved {len(P.slides)} slides')
