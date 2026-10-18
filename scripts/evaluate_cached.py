@@ -33,6 +33,8 @@ def main():
     ap.add_argument("--split", default="test")
     ap.add_argument("--vlm-budget", default="none", choices=["none", "laptop", "off"])
     ap.add_argument("--budget", type=float, default=270.0)
+    ap.add_argument("--stride", type=int, default=1,
+                    help="keep every k-th cached frame: 2 ≈ 1 fps, 3 ≈ 0.67 fps (low-frame-rate robustness)")
     a = ap.parse_args()
     labels = load_labels()
     models = pipeline.Models()
@@ -49,6 +51,10 @@ def main():
     rows = []
     for name in sorted(n for n, l in labels.items() if l["split"] == a.split):
         d, frames = load_video(name)
+        if a.stride > 1:
+            d["obs"], frames = d["obs"][::a.stride], frames[::a.stride]
+            if d.get("clip_wa") is not None:
+                d["clip_wa"] = d["clip_wa"][::a.stride]
         moms = None
         vpath = os.path.join(ROOT, "data", "vlm", f"{name}.json")
         if a.vlm_budget != "off" and os.path.exists(vpath):

@@ -50,6 +50,11 @@ class MLAnalyzer:
                 self.vlm = VLM(threads=threads)
             except Exception as e:  # weights missing / backend unavailable → CV-only mode
                 print(f"VLM disabled: {e}", file=__import__("sys").stderr)
+        # Without a VLM the post-perception stages (CLIP, OWL, evidence) took ≤ 10 s of a 260 s budget on Railway,
+        # so perception gets 75 % instead of 60 %: long videos are sampled denser (leave detection degrades below
+        # 1 frame/s: 6 → 10 errors on the 40 cached videos when thinned to 1 fps).
+        if self.vlm is None:
+            self.PERCEPTION_SHARE = 0.75
 
     PERCEPTION_SHARE = 0.6   # share of the budget for perception; the rest: CLIP, VLM, evidence frames
     VLM_MIN_LEFT = 90.0      # run the VLM only if at least this many seconds remain after perception
