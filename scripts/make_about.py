@@ -158,7 +158,7 @@ curl {URL}/api/v1/jobs/&lt;job_id&gt; -H "X-API-Key: &lt;ключ&gt;"</code></p
 <li>На общем CPU облака длинные видео анализируются с пониженной частотой кадров; если она ниже 1 кадра/с, результат помечается предупреждением.</li>
 <li>Если рабочее место кассира не найдено (необычный ракурс), результат выдаётся с предупреждением «вывод ненадёжен».</li>
 </ul></div>
-<p class="muted">Код: приватный репозиторий команды; доступ — по запросу жюри.</p>
+<p class="muted">Код: <a href="https://github.com/ayatyeah/CashGuard" target="_blank" rel="noopener">github.com/ayatyeah/CashGuard</a></p>
 </main></body></html>
 """
 

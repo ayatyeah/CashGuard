@@ -6,6 +6,7 @@
 ## 1. Адреса и доступ
 - **Интерфейс:** https://fortecashguard.up.railway.app
 - **Описание решения (публичная страница, без ключа):** https://fortecashguard.up.railway.app/about.html — разделы 2–6 ниже
+- **Код (публичный репозиторий):** https://github.com/ayatyeah/CashGuard
 - **API (ТЗ §10):** `POST https://fortecashguard.up.railway.app/api/v1/analyze` (multipart, поле `file`) →
   `{"job_id": ..., "status": "processing"}`; `GET https://fortecashguard.up.railway.app/api/v1/jobs/{job_id}` →
   `processing | done | failed`, при `done` — `verdict`, `violations[]` (`type`, `timecode_sec`, `description`,
