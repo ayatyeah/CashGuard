@@ -7,6 +7,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -20,7 +23,32 @@ type Service struct {
 }
 
 // MinBudget is the least time worth starting an analysis with; below it the job fails explicitly.
-const MinBudget = 30 * time.Second
+// A short, low-frame-rate result is better than "unprocessed", so it is kept small.
+const MinBudget = 22 * time.Second
+
+func writeDeadline(path string, t time.Time) {
+	_ = os.WriteFile(path, []byte(strconv.FormatFloat(float64(t.UnixNano())/1e9, 'f', 3, 64)), 0600)
+}
+
+// shrinkWhileRunning lowers the running job's deadline when videos arrive during its analysis (uploads of a batch
+// land seconds apart), so every job of the batch keeps a share of its own 5 minutes. It never extends the deadline.
+func (s *Service) shrinkWhileRunning(path string, full, cur time.Time, stop <-chan struct{}) {
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-stop:
+			return
+		case <-tick.C:
+			if w := len(s.queue); w > 0 {
+				if share := time.Now().Add(time.Until(full) / time.Duration(1+w)); share.Before(cur) {
+					cur = share
+					writeDeadline(path, cur)
+				}
+			}
+		}
+	}
+}
 
 func New(repo domain.Repository, a domain.Analyzer, demo bool) *Service {
 	s := &Service{Repo: repo, Analyzer: a, queue: make(chan domain.Job, 20), Demo: demo, Deadline: 285 * time.Second}
@@ -69,6 +97,14 @@ func (s *Service) worker() {
 				deadline = share
 			}
 		}
+		full := deadline
+		if created, e := time.Parse(time.RFC3339Nano, j.Created); e == nil {
+			full = created.Add(s.Deadline)
+		}
+		j.DeadlineFile = filepath.Join(os.TempDir(), "cashguard-"+j.ID+".deadline")
+		writeDeadline(j.DeadlineFile, deadline)
+		stop := make(chan struct{})
+		go s.shrinkWhileRunning(j.DeadlineFile, full, deadline, stop)
 		var result domain.Job
 		var e error
 		if time.Until(deadline) < MinBudget {
@@ -81,6 +117,9 @@ func (s *Service) worker() {
 			}
 			cancel()
 		}
+		close(stop)
+		_ = os.Remove(j.DeadlineFile)
+		j.DeadlineFile = ""
 		if e != nil {
 			log.Printf("job %s failed: %v", j.ID, e)
 			j.Status = "failed"

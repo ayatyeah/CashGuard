@@ -33,6 +33,9 @@ func (a CommandAnalyzer) Analyze(ctx context.Context, j domain.Job) (domain.Job,
 	var output limitedBuffer
 	cmd.Stdout = &output
 	cmd.Stderr = os.Stderr
+	if j.DeadlineFile != "" {
+		cmd.Env = append(os.Environ(), "FORTE_DEADLINE_FILE="+j.DeadlineFile)
+	}
 	if e := cmd.Run(); e != nil {
 		return j, fmt.Errorf("локальный анализатор завершился с ошибкой")
 	}

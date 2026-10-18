@@ -60,8 +60,22 @@ class MLAnalyzer:
             return 2.0, "full"
         return max(0.5, fps), "cheap"
 
+    @staticmethod
+    def shared_budget(t0: float, budget_sec: float) -> float:
+        """The server lowers a running job's deadline when more videos arrive (FORTE_DEADLINE_FILE holds the absolute
+        unix deadline). Returns the budget measured from t0, never larger than the original one."""
+        p = os.environ.get("FORTE_DEADLINE_FILE")
+        if not p:
+            return budget_sec
+        try:
+            dl = float(open(p).read().strip())
+        except (OSError, ValueError):
+            return budget_sec
+        return min(budget_sec, max(1.0, dl - 15.0 - t0))  # same 15 s reserve for evidence/saving as the server
+
     def analyze(self, video_path: str, meta: dict, budget_sec: float) -> AnalysisResult:
         t0 = time.time()
+        budget_sec = self.shared_budget(t0, budget_sec)
         vm = video_meta(video_path)
         duration = float(meta.get("duration") or vm["duration"])
         fps, mode = self._fps(duration, budget_sec)
@@ -101,6 +115,12 @@ class MLAnalyzer:
                     wa_crops.append(cv2.resize(crop(img, o.extra.get("work_area")), (224, 224)))
                     last_t = t
                     if len(obs) >= 6 and len(obs) % 6 == 0:
+                        nb = self.shared_budget(t0, budget_sec)
+                        if nb < budget_sec:  # more videos arrived: shrink to this job's share
+                            budget_sec = nb
+                            deadline = t0 + 0.8 * budget_sec
+                            if "мало времени: частота кадров снижена" not in warnings:
+                                warnings.append("мало времени: частота кадров снижена")
                         # re-plan: thin the sampling over the REST of the video rather than cut its end off
                         per = (time.time() - t_perc_start) / len(obs)
                         remaining = max(0.0, duration - t)
@@ -137,6 +157,7 @@ class MLAnalyzer:
             # crops are in perception coordinates (frames may have been downscaled to max_side=960)
             return img if img.shape[:2] == (H, W) else cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA)
 
+        budget_sec = self.shared_budget(t0, budget_sec)
         vlm_budget = max(0.0, budget_sec - (time.time() - t0) - 20.0)
         if vlm_budget < self.VLM_MIN_LEFT:
             vlm_budget = 0.0  # not enough time for the VLM → CV-only result (never a timeout)

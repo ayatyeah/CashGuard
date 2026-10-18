@@ -24,17 +24,20 @@ type Violation struct {
 	Rule        *Rule   `json:"rule,omitempty"`
 }
 type Job struct {
-	OwnerID    string      `json:"-"`
-	ID         string      `json:"job_id"`
-	Status     string      `json:"status"`
-	Verdict    string      `json:"verdict,omitempty"`
-	Violations []Violation `json:"violations"`
-	Warnings   []string    `json:"warnings,omitempty"`
-	Filename   string      `json:"filename"`
-	Created    string      `json:"created_at"`
-	Error      string      `json:"error,omitempty"`
-	Demo       bool        `json:"demo"`
-	Path       string      `json:"-"`
+	OwnerID string `json:"-"`
+	// DeadlineFile holds the job's current absolute deadline (unix seconds); the worker lowers it while the job runs
+	// when more videos arrive, and the analyzer re-reads it (fair share of the 5-minute limit). Not persisted.
+	DeadlineFile string      `json:"-"`
+	ID           string      `json:"job_id"`
+	Status       string      `json:"status"`
+	Verdict      string      `json:"verdict,omitempty"`
+	Violations   []Violation `json:"violations"`
+	Warnings     []string    `json:"warnings,omitempty"`
+	Filename     string      `json:"filename"`
+	Created      string      `json:"created_at"`
+	Error        string      `json:"error,omitempty"`
+	Demo         bool        `json:"demo"`
+	Path         string      `json:"-"`
 }
 type Repository interface {
 	Save(Job) error
