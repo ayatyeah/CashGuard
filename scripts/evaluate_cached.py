@@ -22,6 +22,12 @@ SEC_PER_MOMENT = 30.0      # Qwen3-VL-2B bf16 on Ryzen 5 5600H
 PERCEPTION_RT = 1.0        # perception ≈ 1× video duration on the same CPU
 
 
+def _owl_cache(name):
+    """Offline OWLv2 desk-item scores (scripts/run_owl.py) so next_visit_owl is evaluated like in production."""
+    p = os.path.join(ROOT, "data", "owl", f"{name}.json")
+    return {float(k): v for k, v in json.load(open(p)).items()} if os.path.exists(p) else None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", default="test")
@@ -54,7 +60,7 @@ def main():
                     if k >= n_ok:
                         m["answer"], m["skipped"] = {}, True
         events, info = pipeline.run(d["obs"], frames, d["meta"]["width"], d["meta"]["height"], models,
-                                    clip=clip, clip_wa=d.get("clip_wa"), vlm_moments=moms or [])
+                                    clip=clip, clip_wa=d.get("clip_wa"), vlm_moments=moms or [], owl_cache=_owl_cache(name))
         lab = labels[name]
         ev = [(e.type_id, round(e.t, 1), round(e.p, 2)) for e in events]
         pred = int(bool(ev))

@@ -473,7 +473,10 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
         i = _idx(scene, float(tr.t[near][0]) + 1.0)
         cands.append(Cand("crowd", float(tr.t[near][0]) + 1.0, i, [i, int(tr.idx[near][len(tr.idx[near]) // 2])],
                           {"n_max": float(n[tr.idx[near]].max()), "dur": float(tr.t[near][-1] - tr.t[near][0]),
-                           "standing": standing, "persist": sit_ratio}))
+                           "standing": standing, "persist": sit_ratio,
+                           # all training positives stood ≤ 8.5 s, seated client visits last ≥ 12 s: on a top-down
+                           # camera sitting and standing heights look alike, so only a brief stay counts as "never sat"
+                           "brief": float(tr.t[near][-1] - tr.t[near][0] < 12.0)}))
 
     # ---------------- short visit ----------------
     for tr in visitors:
@@ -487,7 +490,7 @@ def generate(scene: Scene, frames: list[np.ndarray], probes: dict | None = None)
             i = int(tr.idx[k])
             te = max(float(tr.t[0]), float(tr.t[-1]) - 3.0)
             cands.append(Cand("short_visit", te, _idx(scene, te), [i, _idx(scene, tr.t[-1])],
-                              {"dwell": dwell, "max_d": float(d.min())}))
+                              {"dwell": dwell, "max_d": float(d.min()), "dend": float(d[-1])}))
 
     # ---------------- drink / phone / bag ----------------
     pr = probes.get("drinking")

@@ -152,6 +152,8 @@ class MLAnalyzer:
         dets = []
         for e in events:
             ev_ids = [obs[i].frame_id for i in e.evidence] or [obs[e.i].frame_id]
+            if obs[e.i].frame_id not in ev_ids and len(ev_ids) < 3:  # the timecode frame itself is evidence too
+                ev_ids = sorted(ev_ids + [obs[e.i].frame_id])
             dets.append(Detection(type_id=e.type_id, frame_id=int(obs[e.i].frame_id),
                                   evidence_frame_ids=[int(x) for x in ev_ids[:3]],
                                   description=pipeline.describe(e, self.models.norms), confidence=round(e.p, 3)))
